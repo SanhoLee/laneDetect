@@ -15,6 +15,16 @@ int rtnKey = 0;
 int lowThres = 100;
 int highThres = 120;
 
+// unit change format
+double to_radian = (CV_PI / 180);
+double to_degree = 1 / to_radian;
+
+double degree_90_std = CV_PI / 2;
+double degree_60 = CV_PI / 3;
+
+int rightSide_Angle = 1;
+int leftSide_Angle = 1;
+
 int isEmptyImg(Mat img)
 {
     if (img.empty())
@@ -36,19 +46,8 @@ Mat preProcessing(Mat img)
     int kernelSize = 3;
 
     cvtColor(img, imgGray, COLOR_BGR2GRAY);
-    // imwrite(SAVE_FILE_BASE + "imgGray.png", imgGray);
-
     GaussianBlur(imgGray, imgBlur, Size(kernelSize, kernelSize), kernelSize, kernelSize);
-    // imwrite(SAVE_FILE_BASE + "imgBlur.png", imgBlur);
-
     Canny(imgBlur, imgCanny1, lowThres, highThres);
-    // imwrite(SAVE_FILE_BASE + "imgCanny1.png", imgCanny1);
-    // cout << "low, high :: " << lowThres << "\t" << highThres << endl;
-
-    // imshow("imgCanny", imgCanny1);
-
-    // Mat kernel = getStructuringElement(MORPH_RECT, Size(kernelSize - 5, kernelSize - 5));
-    // dilate(imgCanny1, imgDil, kernel);
 
     return imgCanny1;
 }
@@ -58,14 +57,22 @@ void drawHoughLines(vector<Vec2f> lines)
     for (int i = 0; i < lines.size(); i++)
     {
         float rho = lines[i][0], theta = lines[i][1];
-        Point pt1, pt2;
-        double a = cos(theta), b = sin(theta);
-        double x0 = a * rho, y0 = b * rho;
-        pt1.x = cvRound(x0 + 1000 * (-b));
-        pt1.y = cvRound(y0 + 1000 * (a));
-        pt2.x = cvRound(x0 - 1000 * (-b));
-        pt2.y = cvRound(y0 - 1000 * (a));
-        line(img, pt1, pt2, Scalar(0, 0, 255), 3, LINE_AA);
+        double temp1 = double(90 - leftSide_Angle) * to_radian;
+        double temp2 = double(90 + rightSide_Angle) * to_radian;
+        if (theta < temp1 && theta > 0 || theta < CV_PI && theta > temp2)
+        {
+            cout << "criteria angle 1 : " << temp1 * to_degree
+                 << "criteria angle 2 : " << temp2 * to_degree << endl;
+
+            Point pt1, pt2;
+            double a = cos(theta), b = sin(theta);
+            double x0 = a * rho, y0 = b * rho;
+            pt1.x = cvRound(x0 + 1000 * (-b));
+            pt1.y = cvRound(y0 + 1000 * (a));
+            pt2.x = cvRound(x0 - 1000 * (-b));
+            pt2.y = cvRound(y0 - 1000 * (a));
+            line(img, pt1, pt2, Scalar(0, 0, 255), 3, LINE_AA);
+        }
     }
 }
 
@@ -78,10 +85,6 @@ int main()
     double theta_radian = 0;
     double theta_degree = 0;
     int ptr_votes_thres = 100;
-
-    // unit change format
-    double to_radian = (CV_PI / 180);
-    double to_degree = 1 / to_radian;
 
     /*
     1 unit scale transform...
@@ -97,6 +100,8 @@ int main()
     createTrackbar("HLine :: Rho ", "Trackbar", &rho_unit, 10);
     createTrackbar("HLine :: Theta ", "Trackbar", &theta_unit, 10);
     createTrackbar("HLine :: ptr_votes_thres ", "Trackbar", &ptr_votes_thres, 300);
+    createTrackbar("detect :: right lane degree ", "Trackbar", &rightSide_Angle, 90);
+    createTrackbar("detect :: left lane degree ", "Trackbar", &leftSide_Angle, 90);
 
     // float 값 두개를 가지는 lines 벡터 변수 선언.
     vector<Vec2f> lines;
@@ -119,12 +124,12 @@ int main()
 
         HoughLines(imgEdge, lines, rho_thres, theta_radian, ptr_votes_thres, 0, 0);
         drawHoughLines(lines);
-        cout << "rho : " << rho_thres << "\t , degree : " << theta_degree << "\t , votes : " << ptr_votes_thres << endl;
 
         imshow("img", img);
         rtnKey = waitKey(1);
         if (rtnKey == 27)
         {
+            imwrite(SAVE_FILE_BASE + "HoughCurrent.png", img);
             return 0;
         }
     }
