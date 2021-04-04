@@ -6,21 +6,18 @@
 using namespace cv;
 using namespace std;
 
-// unit change format
-double to_radian = (CV_PI / 180);
-double to_degree = (180 / CV_PI);
-
 void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle)
 {
     for (int i = 0; i < lines.size(); i++)
     {
         float rho = lines[i][0], theta = lines[i][1];
-        double temp1 = double(90 - leftSide_Angle) * to_radian;
-        double temp2 = double(90 + rightSide_Angle) * to_radian;
+        // double temp1 = double(90 - leftSide_Angle) * to_radian;
+        double temp1 = double(90 - leftSide_Angle) * toRadian();
+        double temp2 = double(90 + rightSide_Angle) * toRadian();
         if (theta < temp1 && theta > 0 || theta < CV_PI && theta > temp2)
         {
-            cout << "criteria angle 1 : " << temp1 * to_degree
-                 << "\t criteria angle 2 : " << temp2 * to_degree << endl;
+            cout << "criteria angle 1 : " << temp1 * toDegree()
+                 << "\t criteria angle 2 : " << temp2 * toDegree() << endl;
 
             Point pt1, pt2;
             double a = cos(theta), b = sin(theta);

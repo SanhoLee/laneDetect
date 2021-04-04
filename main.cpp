@@ -24,10 +24,6 @@ int main()
     double theta_degree = 0;
     int ptr_votes_thres = 100;
 
-    // unit change format
-    double to_radian = (CV_PI / 180);
-    double to_degree = (180 / CV_PI);
-
     /*
     1 unit scale transform...
     rho 1 unit -> 0.25 px
@@ -58,12 +54,11 @@ int main()
         /* 1. preprocessing img. */
         imgEdge = preProcessing(img);
 
-        /* 2. Hough line Transform(normal version.)
-          */
+        /* 2. Hough line Transform(normal version.)*/
 
         rho_thres = (double)rho_unit * 0.25;
         theta_degree = (double)theta_unit * 0.5;
-        theta_radian = theta_degree * to_radian;
+        theta_radian = theta_degree * toRadian();
 
         HoughLines(imgEdge, lines, rho_thres, theta_radian, ptr_votes_thres, 0, 0);
         drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle);
