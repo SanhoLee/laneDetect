@@ -3,6 +3,7 @@
 #include "gloabalVal.hpp"
 #include "CV_header.hpp"
 #include "handleImg.hpp"
+#include "calculation.hpp"
 
 using namespace std;
 using namespace cv;
@@ -61,7 +62,14 @@ int main()
         theta_radian = theta_degree * toRadian();
 
         HoughLines(imgEdge, lines, rho_thres, theta_radian, ptr_votes_thres, 0, 0);
-        drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle);
+        // 직선의 방정식을 작성.
+        vector<lineElement> lineEqElms;
+        vector<pointsElement> pntElms;
+
+        lineEqElms = calcLineElement(lines);
+        pntElms = getLinePoints(lineEqElms, img, 0.5);
+
+        // drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle);
 
         resize(img, img, Size(), 0.5, 0.5);
         imshow("img", img);
