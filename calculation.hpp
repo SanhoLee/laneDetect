@@ -8,7 +8,7 @@
 using namespace std;
 using namespace cv;
 
-vector<lineElement> calcLineElement(vector<Vec2f> lines);
+vector<lineElement> calcLineElement(vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle);
 vector<pointsElement> getLinePoints(vector<lineElement> lineElems, Mat img, double topPosY);
 
 #endif

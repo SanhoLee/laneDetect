@@ -11,8 +11,11 @@ int rtnKey = 0;
 
 double degree_90_std = CV_PI / 2;
 double degree_60 = CV_PI / 3;
-int rightSide_Angle = 1;
-int leftSide_Angle = 1;
+
+int rightSide_Angle = 19;
+int leftSide_Angle = 30;
+int yFixed = 100;
+
 String IMG_FILE = "data/cac07407-196cd6f8.jpg";
 String SAVE_FILE_BASE = "data/output/";
 
@@ -20,27 +23,28 @@ int main()
 {
     // 이 값 설정으로 근처에 있는 서로 다른 직선을 구별한다.
     // Initialize rho and theta
-    double rho_thres = 0;
+    double rho_thres = 0.0;
     double theta_radian = 0;
     double theta_degree = 0;
-    int ptr_votes_thres = 100;
+    int ptr_votes_thres = 70;
 
     /*
     1 unit scale transform...
     rho 1 unit -> 0.25 px
     theta 1 unit -> 0.5 degree
     */
-    int rho_unit = 1;
-    int theta_unit = 1;
+    int rho_unit = 3;
+    int theta_unit = 8;
 
     namedWindow("Trackbar", WINDOW_NORMAL);
     resizeWindow("Trackbar", Size(700, 100));
 
-    createTrackbar("HLine :: Rho ", "Trackbar", &rho_unit, 10);
-    createTrackbar("HLine :: Theta ", "Trackbar", &theta_unit, 10);
-    createTrackbar("HLine :: ptr_votes_thres ", "Trackbar", &ptr_votes_thres, 300);
-    createTrackbar("detect :: right lane degree ", "Trackbar", &rightSide_Angle, 90);
-    createTrackbar("detect :: left lane degree ", "Trackbar", &leftSide_Angle, 90);
+    createTrackbar("Rho ", "Trackbar", &rho_unit, 10);
+    createTrackbar("Theta ", "Trackbar", &theta_unit, 10);
+    createTrackbar("votes_thres ", "Trackbar", &ptr_votes_thres, 300);
+    createTrackbar("right degree ", "Trackbar", &rightSide_Angle, 90);
+    createTrackbar("left degree ", "Trackbar", &leftSide_Angle, 90);
+    createTrackbar("yFixed ", "Trackbar", &yFixed, 500);
 
     // float 값 두개를 가지는 lines 벡터 변수 선언.
     vector<Vec2f> lines;
@@ -62,14 +66,16 @@ int main()
         theta_radian = theta_degree * toRadian();
 
         HoughLines(imgEdge, lines, rho_thres, theta_radian, ptr_votes_thres, 0, 0);
-        // 직선의 방정식을 작성.
-        vector<lineElement> lineEqElms;
-        vector<pointsElement> pntElms;
 
-        lineEqElms = calcLineElement(lines);
-        pntElms = getLinePoints(lineEqElms, img, 0.5);
+        // cout << "votes : " << ptr_votes_thres
+        //      << "\t left Angle :" << leftSide_Angle
+        //      << "\t right Angle :" << rightSide_Angle
+        //      << "\t Rho : " << rho_thres
+        //      << "\t theta(degree) : " << theta_degree
+        //      << "\t yFixed : " << yFixed
+        //      << endl;
 
-        // drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle);
+        drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle, yFixed);
 
         resize(img, img, Size(), 0.5, 0.5);
         imshow("img", img);

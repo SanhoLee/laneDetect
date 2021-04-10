@@ -5,7 +5,8 @@
 using namespace cv;
 using namespace std;
 
-void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle);
+void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle, int yFixed);
+void drawLinesWithPoint(Mat img, vector<pointsElement> pntElms);
 int isEmptyImg(Mat img);
 Mat preProcessing(Mat img);
 
