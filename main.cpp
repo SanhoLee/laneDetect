@@ -3,7 +3,6 @@
 #include "gloabalVal.hpp"
 #include "CV_header.hpp"
 #include "handleImg.hpp"
-#include "calculation.hpp"
 
 using namespace std;
 using namespace cv;
@@ -66,16 +65,13 @@ int main()
         theta_radian = theta_degree * toRadian();
 
         HoughLines(imgEdge, lines, rho_thres, theta_radian, ptr_votes_thres, 0, 0);
-
-        // cout << "votes : " << ptr_votes_thres
-        //      << "\t left Angle :" << leftSide_Angle
-        //      << "\t right Angle :" << rightSide_Angle
-        //      << "\t Rho : " << rho_thres
-        //      << "\t theta(degree) : " << theta_degree
-        //      << "\t yFixed : " << yFixed
-        //      << endl;
-
         drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle, yFixed);
+        showCurValue(ptr_votes_thres,
+                     leftSide_Angle,
+                     rightSide_Angle,
+                     rho_thres,
+                     theta_degree,
+                     yFixed);
 
         resize(img, img, Size(), 0.5, 0.5);
         imshow("img", img);

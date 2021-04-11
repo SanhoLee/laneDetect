@@ -6,6 +6,17 @@
 using namespace cv;
 using namespace std;
 
+void showCurValue(int ptr_votes_thres, int leftSide_Angle, int rightSide_Angle, double rho_thres, double theta_degree, int yFixed)
+{
+    cout << "votes : " << ptr_votes_thres
+         << "\t left Angle :" << leftSide_Angle
+         << "\t right Angle :" << rightSide_Angle
+         << "\t Rho : " << rho_thres
+         << "\t theta(degree) : " << theta_degree
+         << "\t yFixed : " << yFixed
+         << endl;
+}
+
 void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle, int yFixed)
 {
     for (int i = 0; i < lines.size(); i++)

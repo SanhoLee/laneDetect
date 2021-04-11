@@ -9,5 +9,12 @@ void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightS
 void drawLinesWithPoint(Mat img, vector<pointsElement> pntElms);
 int isEmptyImg(Mat img);
 Mat preProcessing(Mat img);
+void showCurValue(
+    int ptr_votes_thres,
+    int leftSide_Angle,
+    int rightSide_Angle,
+    double rho_thres,
+    double theta_degree,
+    int yFixed);
 
 #endif
