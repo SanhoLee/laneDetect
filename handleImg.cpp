@@ -6,7 +6,15 @@
 using namespace cv;
 using namespace std;
 
-void showCurValue(int ptr_votes_thres, int leftSide_Angle, int rightSide_Angle, double rho_thres, double theta_degree, int yFixed)
+void showCurValue(
+    int ptr_votes_thres,
+    int leftSide_Angle,
+    int rightSide_Angle,
+    double rho_thres,
+    double theta_degree,
+    int yFixed,
+    double minLineLen,
+    double maxGap)
 {
     cout << "votes : " << ptr_votes_thres
          << "\t left Angle :" << leftSide_Angle
@@ -14,6 +22,8 @@ void showCurValue(int ptr_votes_thres, int leftSide_Angle, int rightSide_Angle, 
          << "\t Rho : " << rho_thres
          << "\t theta(degree) : " << theta_degree
          << "\t yFixed : " << yFixed
+         << "\t minLineLen : " << minLineLen
+         << "\t maxGap : " << maxGap
          << endl;
 }
 
@@ -56,11 +66,17 @@ void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightS
     }
 }
 
-void drawLinesWithPoint(Mat img, vector<pointsElement> pntElms)
+void drawLinesWithPoint(Mat img, vector<Vec4i> linePoints)
 {
-    for (int i = 0; i < pntElms.size(); i++)
+    for (int i = 0; i < linePoints.size(); i++)
     {
-        line(img, pntElms[i].topPt, pntElms[i].bottomPt, Scalar(0, 0, 255), 3, LINE_AA);
+        line(
+            img,
+            Point(linePoints[i][0], linePoints[i][1]),
+            Point(linePoints[i][2], linePoints[i][3]),
+            Scalar(0, 0, 255),
+            3,
+            LINE_AA);
     }
 }
 

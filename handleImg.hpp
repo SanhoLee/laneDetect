@@ -6,7 +6,7 @@ using namespace cv;
 using namespace std;
 
 void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle, int yFixed);
-void drawLinesWithPoint(Mat img, vector<pointsElement> pntElms);
+void drawLinesWithPoint(Mat img, vector<Vec4i> linePoints);
 int isEmptyImg(Mat img);
 Mat preProcessing(Mat img);
 void showCurValue(
@@ -15,6 +15,8 @@ void showCurValue(
     int rightSide_Angle,
     double rho_thres,
     double theta_degree,
-    int yFixed);
+    int yFixed,
+    double minLineLen,
+    double maxGap);
 
 #endif
