@@ -6,6 +6,42 @@
 using namespace cv;
 using namespace std;
 
+vector<Vec4i> filterBtmCtrPt(
+    Mat img,
+    vector<Vec4i> linePoints,
+    double topPos,
+    double leftPos,
+    double rightPos)
+{
+    vector<Vec4i> linePointsRtn(linePoints.size());
+
+    int imgHeight = img.size().height;
+    int imgWidth = img.size().width;
+    int cnt = 0;
+
+    Point pt1;
+    Point pt2;
+
+    for (int i = 0; i < linePoints.size(); i++)
+    {
+        // Point 데이터 할당
+        pt1.x = linePoints[i][0];
+        pt1.y = linePoints[i][1];
+        pt2.x = linePoints[i][2];
+        pt2.y = linePoints[i][3];
+
+        if (pt1.y > imgHeight * (1 - topPos))
+        {
+            linePointsRtn[cnt][0] = pt1.x;
+            linePointsRtn[cnt][1] = pt1.y;
+            linePointsRtn[cnt][2] = pt2.x;
+            linePointsRtn[cnt][3] = pt2.y;
+            cnt++;
+        }
+    }
+    return linePointsRtn;
+}
+
 void showCurValue(
     int ptr_votes_thres,
     int leftSide_Angle,

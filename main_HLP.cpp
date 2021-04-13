@@ -20,6 +20,9 @@ int rho_unit = 3;
 int theta_unit = 8;
 int minLineLen_unit = 10;
 int maxGap_unit = 10;
+int topPos_unit = 5;
+int leftPos_unit = 5;
+int rightPos_unit = 5;
 
 int rightSide_Angle = 19;
 int leftSide_Angle = 30;
@@ -45,6 +48,9 @@ int main()
 
     double minLineLen = 0;
     double maxGap = 0;
+    double topPos = 0;
+    double leftPos = 0;
+    double rightPos = 0;
 
     namedWindow("Trackbar", WINDOW_NORMAL);
     resizeWindow("Trackbar", Size(700, 100));
@@ -52,7 +58,9 @@ int main()
     createTrackbar("Rho ", "Trackbar", &rho_unit, 10);
     createTrackbar("Theta ", "Trackbar", &theta_unit, 10);
     createTrackbar("votes_thres ", "Trackbar", &ptr_votes_thres, 300);
-    createTrackbar("yFixed ", "Trackbar", &yFixed, 500);
+    createTrackbar("topPos ", "Trackbar", &topPos_unit, 10);
+    createTrackbar("leftPos ", "Trackbar", &leftPos_unit, 10);
+    createTrackbar("rightPos ", "Trackbar", &rightPos_unit, 10);
     createTrackbar("minLineLen_unit ", "Trackbar", &minLineLen_unit, 50);
     createTrackbar("maxGap_unit ", "Trackbar", &maxGap_unit, 50);
 
@@ -76,6 +84,9 @@ int main()
         theta_radian = theta_degree * toRadian();
         minLineLen = minLineLen_unit * 0.5;
         maxGap = maxGap_unit * 0.5;
+        topPos = topPos_unit * 0.1;
+        leftPos = leftPos_unit * 0.1;
+        rightPos = rightPos_unit * 0.1;
 
         HoughLinesP(
             imgEdge,
@@ -85,6 +96,9 @@ int main()
             ptr_votes_thres,
             minLineLen,
             maxGap);
+
+        // filtering points on Specific Area.
+        linePoints = filterBtmCtrPt(img, linePoints, topPos, leftPos, rightPos);
 
         // drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle, yFixed);
         drawLinesWithPoint(img, linePoints);
