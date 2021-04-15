@@ -20,9 +20,9 @@ int rho_unit = 3;
 int theta_unit = 8;
 int minLineLen_unit = 10;
 int maxGap_unit = 10;
-int topPos_unit = 5;
-int leftPos_unit = 5;
-int rightPos_unit = 5;
+int topPos_unit = 3;
+int leftPos_unit = 3;
+int rightPos_unit = 3;
 
 int rightSide_Angle = 19;
 int leftSide_Angle = 30;
@@ -44,7 +44,7 @@ int main()
     double rho_thres = 0.0;
     double theta_radian = 0;
     double theta_degree = 0;
-    int ptr_votes_thres = 70;
+    int ptr_votes_thres = 14;
 
     double minLineLen = 0;
     double maxGap = 0;
@@ -103,13 +103,13 @@ int main()
         // drawHoughLines(img, lines, leftSide_Angle, rightSide_Angle, yFixed);
         drawLinesWithPoint(img, linePoints);
         showCurValue(ptr_votes_thres,
-                     leftSide_Angle,
-                     rightSide_Angle,
                      rho_thres,
                      theta_degree,
-                     yFixed,
                      minLineLen,
-                     maxGap);
+                     maxGap,
+                     topPos,
+                     leftPos,
+                     rightPos);
 
         resize(img, img, Size(), 0.5, 0.5);
         imshow("img", img);

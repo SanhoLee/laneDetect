@@ -30,7 +30,10 @@ vector<Vec4i> filterBtmCtrPt(
         pt2.x = linePoints[i][2];
         pt2.y = linePoints[i][3];
 
-        if (pt1.y > imgHeight * (1 - topPos))
+        // top, left, right Boundary ...
+        if (pt1.y > imgHeight * (1 - topPos) &&
+            pt1.x > imgWidth * leftPos &&
+            pt1.x < imgWidth * (1 - rightPos))
         {
             linePointsRtn[cnt][0] = pt1.x;
             linePointsRtn[cnt][1] = pt1.y;
@@ -44,22 +47,22 @@ vector<Vec4i> filterBtmCtrPt(
 
 void showCurValue(
     int ptr_votes_thres,
-    int leftSide_Angle,
-    int rightSide_Angle,
     double rho_thres,
     double theta_degree,
-    int yFixed,
     double minLineLen,
-    double maxGap)
+    double maxGap,
+    double topPos,
+    double leftPos,
+    double rightPos)
 {
     cout << "votes : " << ptr_votes_thres
-         << "\t left Angle :" << leftSide_Angle
-         << "\t right Angle :" << rightSide_Angle
          << "\t Rho : " << rho_thres
          << "\t theta(degree) : " << theta_degree
-         << "\t yFixed : " << yFixed
          << "\t minLineLen : " << minLineLen
          << "\t maxGap : " << maxGap
+         << "\t topPos : " << topPos
+         << "\t leftPos : " << leftPos
+         << "\t rightPos : " << rightPos
          << endl;
 }
 

@@ -17,12 +17,12 @@ int isEmptyImg(Mat img);
 Mat preProcessing(Mat img);
 void showCurValue(
     int ptr_votes_thres,
-    int leftSide_Angle,
-    int rightSide_Angle,
     double rho_thres,
     double theta_degree,
-    int yFixed,
     double minLineLen,
-    double maxGap);
+    double maxGap,
+    double topPos,
+    double leftPos,
+    double rightPos);
 
 #endif
