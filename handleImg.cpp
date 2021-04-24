@@ -46,23 +46,18 @@ vector<Vec4i> filterBtmCtrPt(
 }
 
 void showCurValue(
-    int ptr_votes_thres,
-    double rho_thres,
-    double theta_degree,
-    double minLineLen,
-    double maxGap,
-    double topPos,
-    double leftPos,
-    double rightPos)
+    int lowThres,
+    int highThres)
 {
-    cout << "votes : " << ptr_votes_thres
-         << "\t Rho : " << rho_thres
-         << "\t theta(degree) : " << theta_degree
-         << "\t minLineLen : " << minLineLen
-         << "\t maxGap : " << maxGap
-         << "\t topPos : " << topPos
-         << "\t leftPos : " << leftPos
-         << "\t rightPos : " << rightPos
+    // cout << " hmin : " << hmin
+    //      << "\t smin : " << smin
+    //      << "\t vmin : " << vmin
+    //      << "\t hmax : " << hmax
+    //      << "\t smax : " << smax
+    //      << "\t vmax : " << vmax
+    //      << endl;
+    cout << " lowThres : " << lowThres
+         << "\t highThres : " << highThres
          << endl;
 }
 
@@ -133,18 +128,83 @@ int isEmptyImg(Mat img)
     }
 }
 
-Mat preProcessing(Mat img)
+Mat preProcessing(Mat img, Scalar lower, Scalar upper)
 {
-    Mat imgGray, imgBlur, imgDil;
+    /*
+        .convert to HSV color space
+        .masking with inRange Function.
+        .canny Edge detecting..
+        .calculating bitwise_and with fillPoly area.   
+    */
+
+    Mat imgHSV, imgBlur, imgDil;
+    Mat maskImg;
     Mat imgCanny1;
     int kernelSize = 3;
 
     int lowThres = 100;
     int highThres = 120;
 
-    cvtColor(img, imgGray, COLOR_BGR2GRAY);
-    GaussianBlur(imgGray, imgBlur, Size(kernelSize, kernelSize), kernelSize, kernelSize);
-    Canny(imgBlur, imgCanny1, lowThres, highThres);
+    cvtColor(img, imgHSV, COLOR_BGR2HSV);
+    inRange(imgHSV, lower, upper, maskImg);
+    // GaussianBlur(imgHSV, imgBlur, Size(kernelSize, kernelSize), kernelSize, kernelSize);
+    // Canny(imgBlur, imgCanny1, lowThres, highThres);
 
-    return imgCanny1;
+    return maskImg;
+}
+
+Mat ImgROI(Mat imgCanny, int yFixed_unit, int leftPnt_Pos_unit, int rightPnt_Pos_unit)
+{
+    /*
+    
+    leftPnt_Pos, rightPnt_Pos : Ratio from width center line.
+    yFixed : Position on Vertical direction.(Ratio expression. 0 to 1.)
+    
+    
+    */
+    Point leftPoint;
+    Point rightPoint;
+
+    double yFixed = yFixed_unit * 0.01;
+    double leftPnt_Pos = leftPnt_Pos_unit * 0.01;
+    double rightPnt_Pos = rightPnt_Pos_unit * 0.01;
+
+    int HEIGHT_ = imgCanny.size().height;
+    int WIDTH_ = imgCanny.size().width;
+    // create zero pixel value img.
+    Mat zeros = Mat::zeros(Size(WIDTH_, HEIGHT_), CV_8UC1);
+    Mat imgFiltered;
+
+    // ROI Point vector
+    vector<vector<Point>> ROI_point(1, vector<Point>(6));
+    float ratio_y1 = 0.2;
+    float ratio_y2 = 0.4;
+
+    // polygon point setting.
+    ROI_point[0][0] = Point(0, HEIGHT_);
+    ROI_point[0][1] = Point(0, HEIGHT_ * (1 - ratio_y1));
+    ROI_point[0][2] = Point((WIDTH_ / 2) * (1 - leftPnt_Pos), HEIGHT_ * (1 - ratio_y2));
+    ROI_point[0][3] = Point((WIDTH_ / 2) * (1 + rightPnt_Pos), HEIGHT_ * (1 - ratio_y2));
+    ROI_point[0][4] = Point(WIDTH_, HEIGHT_ * (1 - ratio_y1));
+    ROI_point[0][5] = Point(WIDTH_, HEIGHT_);
+
+    leftPoint = ROI_point[0][2];
+    rightPoint = ROI_point[0][3];
+
+    /* 
+    Do fillPoly and bitwise_and process.
+    white * black pixel --> 0
+    white * white pixel --> 1 (printed on the img.) 
+    */
+    // make polygon white pixel.
+    fillPoly(zeros, {ROI_point[0]}, Scalar(255, 255, 255), LINE_AA);
+    // calculating bit multiply.
+    bitwise_and(imgCanny, zeros, imgFiltered);
+
+    circle(imgFiltered, leftPoint, 10, Scalar(255, 0, 0), 3, LINE_AA);
+    circle(imgFiltered, rightPoint, 10, Scalar(255, 0, 0), 3, LINE_AA);
+    circle(imgFiltered, ROI_point[0][1], 10, Scalar(255, 0, 0), 3, LINE_AA);
+    circle(imgFiltered, ROI_point[0][4], 10, Scalar(255, 0, 0), 3, LINE_AA);
+
+    return imgFiltered;
 }
