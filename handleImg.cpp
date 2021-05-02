@@ -1,5 +1,4 @@
 #include <iostream>
-#include "gloabalVal.hpp"
 #include "CV_header.hpp"
 #include "handleImg.hpp"
 
@@ -46,18 +45,24 @@ vector<Vec4i> filterBtmCtrPt(
 }
 
 void showCurValue(
-    int lowThres,
-    int highThres)
+    int hmin,
+    int smin,
+    int lmin,
+    int hmax,
+    int smax,
+    int lmax,
+    int lowT,
+    int highT)
 {
-    // cout << " hmin : " << hmin
-    //      << "\t smin : " << smin
-    //      << "\t vmin : " << vmin
-    //      << "\t hmax : " << hmax
-    //      << "\t smax : " << smax
-    //      << "\t vmax : " << vmax
-    //      << endl;
-    cout << " lowThres : " << lowThres
-         << "\t highThres : " << highThres
+    cout << " hmin : " << hmin
+         << "\t smin : " << smin
+         << "\t lmin : " << lmin
+         << "\t hmax : " << hmax
+         << "\t smax : " << smax
+         << "\t lmax : " << lmax
+         << "\t lowT : " << lowT
+         << "\t highT : " << highT
+
          << endl;
 }
 
@@ -128,27 +133,21 @@ int isEmptyImg(Mat img)
     }
 }
 
-Mat preProcessing(Mat img, Scalar lower, Scalar upper)
+Mat maskingImg(Mat img, Scalar lower, Scalar upper)
 {
     /*
         .convert to HSV color space
         .masking with inRange Function.
-        .canny Edge detecting..
-        .calculating bitwise_and with fillPoly area.   
     */
 
-    Mat imgHSV, imgBlur, imgDil;
+    Mat imgHSV, imgHLS;
     Mat maskImg;
-    Mat imgCanny1;
-    int kernelSize = 3;
 
     int lowThres = 100;
     int highThres = 120;
 
-    cvtColor(img, imgHSV, COLOR_BGR2HSV);
+    cvtColor(img, imgHSV, COLOR_BGR2HLS);
     inRange(imgHSV, lower, upper, maskImg);
-    // GaussianBlur(imgHSV, imgBlur, Size(kernelSize, kernelSize), kernelSize, kernelSize);
-    // Canny(imgBlur, imgCanny1, lowThres, highThres);
 
     return maskImg;
 }
@@ -156,11 +155,8 @@ Mat preProcessing(Mat img, Scalar lower, Scalar upper)
 Mat ImgROI(Mat imgCanny, int yFixed_unit, int leftPnt_Pos_unit, int rightPnt_Pos_unit)
 {
     /*
-    
     leftPnt_Pos, rightPnt_Pos : Ratio from width center line.
     yFixed : Position on Vertical direction.(Ratio expression. 0 to 1.)
-    
-    
     */
     Point leftPoint;
     Point rightPoint;
@@ -188,9 +184,6 @@ Mat ImgROI(Mat imgCanny, int yFixed_unit, int leftPnt_Pos_unit, int rightPnt_Pos
     ROI_point[0][4] = Point(WIDTH_, HEIGHT_ * (1 - ratio_y1));
     ROI_point[0][5] = Point(WIDTH_, HEIGHT_);
 
-    leftPoint = ROI_point[0][2];
-    rightPoint = ROI_point[0][3];
-
     /* 
     Do fillPoly and bitwise_and process.
     white * black pixel --> 0
@@ -200,11 +193,6 @@ Mat ImgROI(Mat imgCanny, int yFixed_unit, int leftPnt_Pos_unit, int rightPnt_Pos
     fillPoly(zeros, {ROI_point[0]}, Scalar(255, 255, 255), LINE_AA);
     // calculating bit multiply.
     bitwise_and(imgCanny, zeros, imgFiltered);
-
-    circle(imgFiltered, leftPoint, 10, Scalar(255, 0, 0), 3, LINE_AA);
-    circle(imgFiltered, rightPoint, 10, Scalar(255, 0, 0), 3, LINE_AA);
-    circle(imgFiltered, ROI_point[0][1], 10, Scalar(255, 0, 0), 3, LINE_AA);
-    circle(imgFiltered, ROI_point[0][4], 10, Scalar(255, 0, 0), 3, LINE_AA);
 
     return imgFiltered;
 }

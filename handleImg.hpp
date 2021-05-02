@@ -14,10 +14,15 @@ vector<Vec4i> filterBtmCtrPt(
 void drawHoughLines(Mat img, vector<Vec2f> lines, int leftSide_Angle, int rightSide_Angle, int yFixed);
 void drawLinesWithPoint(Mat img, vector<Vec4i> linePoints);
 int isEmptyImg(Mat img);
-Mat preProcessing(Mat img, Scalar lower, Scalar upper);
-void showCurValue(
-    int lowThres,
-    int highThres);
+Mat maskingImg(Mat img, Scalar lower, Scalar upper);
+void showCurValue(int hmin,
+                  int smin,
+                  int lmin,
+                  int hmax,
+                  int smax,
+                  int lmax,
+                  int lowT,
+                  int highT);
 Mat ImgROI(Mat imgCanny, int yFixed_unit, int leftPnt_Pos_unit, int rightPnt_Pos_unit);
 
 #endif
