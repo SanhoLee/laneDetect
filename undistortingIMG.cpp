@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "CV_header.hpp"
 
 using namespace cv;
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
         {
             return 0;
         }
-        if (found != 0)
+        if (rtnWaitKey == ' ' && found != 0)
         {
             // when detecting corners correctly.
             // obj 는 기본 베이스로 일정한 간격의 좌표값(x,x,x)을 board 갯수만큼 채워준다.
@@ -116,6 +117,71 @@ int main(int argc, char **argv)
     intrinsic.ptr<float>(0)[0] = 1;
     // focal length(y element : fy)
     intrinsic.ptr<float>(1)[1] = 1;
+
+    /*
+    Get Camera calibrating parameters.
+
+     input  : 
+        object_Points(3D), 
+        image_Points(2D), 
+        img.size()
+     output : 
+        a property of camera and lens
+            - intrinsic(camera coefficient), 
+            - distCoeffs(distorting coefficient), 
+        rvecs(rotation vector), 
+        tvecs(traslation vector)
+
+    Note: The calibrateCamera function converts all matrices into 64F format even if you initialize it to 32F. 
+    
+    CV_8U : 8 bit unsigned integer (pixel range : 0~255)
+    CV_32F : 32 bit(4-byte) float , can have any value between 0~1.0
+
+    as long as you use same camera(lens), you don't need to calculate this process again.
+    save the coeffiecient value and reuse it.
+    */
+
+    ofstream out("out.txt");
+    calibrateCamera(object_Points, image_Points, img.size(), intrinsic, distCoeffs, rvecs, tvecs);
+
+    // write variables on the out file.
+    out << "intrinsic : " << intrinsic << endl;
+    out << "distCoeffs : " << distCoeffs << endl;
+    cout << "rvecs size : " << rvecs.size() << endl;
+    cout << "tvecs size : " << tvecs.size() << endl;
+
+    cout << "rvecs element PRINT : " << endl;
+    for (int i = 0; i < rvecs.size(); i++)
+    {
+        cout << rvecs[i] << endl;
+    }
+
+    cout << "tvecs element PRINT : " << endl;
+    for (int i = 0; i < tvecs.size(); i++)
+    {
+        cout << tvecs[i] << endl;
+    }
+
+    out.close();
+
+    /* undistorting image. */
+    Mat imgUndistorted;
+    while (true)
+    {
+        cap >> img;
+        undistort(img, imgUndistorted, intrinsic, distCoeffs);
+
+        imshow("image", img);
+        imshow("image undistorted", imgUndistorted);
+        rtnWaitKey = waitKey(1);
+        if (rtnWaitKey == 27)
+        {
+            imwrite("imgOrigin.png", img);
+            imwrite("imgUndistorted.png", imgUndistorted);
+            return 0;
+        }
+    }
+    cap.release();
 
     return 0;
 }
