@@ -6,7 +6,9 @@ using namespace cv;
 using namespace std;
 
 // initialize chessboard variables. one squre length : 20mm
-int numHorzCorner = 9;
+// int numHorzCorner = 9;
+int numHorzCorner = 8;
+// int numVertCorner = 6;
 int numVertCorner = 6;
 int oneSqureLen = 20;
 int numBoards = 0;
@@ -29,16 +31,16 @@ int main(int argc, char **argv)
     vector<Point2f> corners;
     int success = 0;
 
-    VideoCapture cap(0);
+    // VideoCapture cap(0);
     Mat img, imgGray;
 
     // get number of boards
-    cout << "Enter number of boards. : ";
-    cin >> numBoards;
+    // cout << "Enter number of boards. : ";
+    // cin >> numBoards;
+    numBoards = 1;
 
-    // while (true)
-    // {
-    cap >> img;
+    // cap >> img;
+    img = imread("data/cb_src.png");
 
     vector<Point3f> obj;
     for (int j = 0; j < numSqures; j++)
@@ -54,9 +56,9 @@ int main(int argc, char **argv)
             board_sz,
             corners,
             CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FILTER_QUADS);
-        // find the corners base on board_sz(horizontal, vertical direction) size.
-        // detected corner pixel is stored in corners array.
-        // 마지막 파라미터 : to improve the chances of detecting the corners.
+        //     //     // find the corners base on board_sz(horizontal, vertical direction) size.
+        //     //     // detected corner pixel is stored in corners array.
+        //     //     // 마지막 파라미터 : to improve the chances of detecting the corners.
         if (found)
         {
             cornerSubPix(
@@ -71,7 +73,8 @@ int main(int argc, char **argv)
         imshow("img Gray", imgGray);
 
         // update new frame again.
-        cap >> img;
+        //     // cap >> img;
+        img = imread("data/cb_src.png");
         rtnWaitKey = waitKey(1);
         if (rtnWaitKey == 27)
         {
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
     // set camera's aspect ratio --> 1
     // focal length(x element : fx)
     intrinsic.ptr<float>(0)[0] = 1;
-    // focal length(y element : fy)
+    // // focal length(y element : fy)
     intrinsic.ptr<float>(1)[1] = 1;
 
     /*
@@ -141,25 +144,24 @@ int main(int argc, char **argv)
     save the coeffiecient value and reuse it.
     */
 
-    ofstream out("out.txt");
     calibrateCamera(object_Points, image_Points, img.size(), intrinsic, distCoeffs, rvecs, tvecs);
 
     // write variables on the out file.
-    out << "intrinsic : " << intrinsic << endl;
-    out << "distCoeffs : " << distCoeffs << endl;
-    cout << "rvecs size : " << rvecs.size() << endl;
-    cout << "tvecs size : " << tvecs.size() << endl;
-
-    cout << "rvecs element PRINT : " << endl;
-    for (int i = 0; i < rvecs.size(); i++)
+    ofstream out("cameraCalibrationData/out.txt");
+    for (int i = 0; i < 3; i++)
     {
-        cout << rvecs[i] << endl;
+        for (int j = 0; j < 3; j++)
+        {
+            out << intrinsic.ptr<double>(i)[j];
+            out << ' ';
+        }
+        out << endl;
     }
 
-    cout << "tvecs element PRINT : " << endl;
-    for (int i = 0; i < tvecs.size(); i++)
+    for (int i = 0; i < distCoeffs.cols; i++)
     {
-        cout << tvecs[i] << endl;
+        out << distCoeffs.ptr<double>(0)[i];
+        out << ' ';
     }
 
     out.close();
@@ -168,7 +170,8 @@ int main(int argc, char **argv)
     Mat imgUndistorted;
     while (true)
     {
-        cap >> img;
+        // cap >> img;
+        img = imread("data/cb_src.png");
         undistort(img, imgUndistorted, intrinsic, distCoeffs);
 
         imshow("image", img);
@@ -176,12 +179,12 @@ int main(int argc, char **argv)
         rtnWaitKey = waitKey(1);
         if (rtnWaitKey == 27)
         {
-            imwrite("imgOrigin.png", img);
-            imwrite("imgUndistorted.png", imgUndistorted);
+            imwrite("data/output/imgOrigin.png", img);
+            imwrite("data/output/imgUndistorted.png", imgUndistorted);
             return 0;
         }
-    }
-    cap.release();
+        // cap.release();
 
-    return 0;
+        return 0;
+    }
 }
