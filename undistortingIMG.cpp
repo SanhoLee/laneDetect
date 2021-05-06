@@ -148,9 +148,12 @@ int main(int argc, char **argv)
 
     // write variables on the out file.
     ofstream out("cameraCalibrationData/out.txt");
-    for (int i = 0; i < 3; i++)
+    int m = intrinsic.rows;
+    int n = intrinsic.cols;
+    out << m << ' ' << n << endl;
+    for (int i = 0; i < m; i++)
     {
-        for (int j = 0; j < 3; j++)
+        for (int j = 0; j < n; j++)
         {
             out << intrinsic.ptr<double>(i)[j];
             out << ' ';
@@ -158,33 +161,70 @@ int main(int argc, char **argv)
         out << endl;
     }
 
-    for (int i = 0; i < distCoeffs.cols; i++)
+    m = distCoeffs.rows;
+    n = distCoeffs.cols;
+    out << m << ' ' << n << endl;
+    for (int i = 0; i < m; i++)
     {
-        out << distCoeffs.ptr<double>(0)[i];
-        out << ' ';
+        for (int j = 0; j < n; j++)
+        {
+            out << distCoeffs.ptr<double>(i)[j];
+            out << ' ';
+        }
+        out << endl;
     }
 
     out.close();
 
+    m = 0, n = 0;
+    // read variables from the out file.
+    ifstream in("cameraCalibrationData/out.txt");
+
+    // get matrix values.
+    // 1. camera matrix size.
+    in >> m >> n;
+
+    // define matrix variable for reading intrinsic variables
+    Mat intrinsicRead = Mat(m, n, intrinsic.type());
+
+    // 2. camera marix values.
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+            in >> intrinsicRead.ptr<double>(i)[j];
+
+    // 3. distortion coefficients matrix size.
+    in >> m >> n;
+
+    // define matrix variable for reading distCoeffs variables
+    Mat distCoeffsRead = Mat(m, n, distCoeffs.type());
+
+    // 4. distortion coefficients matrix value.
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+            in >> distCoeffsRead.ptr<double>(i)[j];
+
+    in.close();
+
     /* undistorting image. */
-    Mat imgUndistorted;
-    while (true)
-    {
-        // cap >> img;
-        img = imread("data/cb_src.png");
-        undistort(img, imgUndistorted, intrinsic, distCoeffs);
+    // Mat imgUndistorted;
+    // while (true)
+    // {
+    //     // cap >> img;
+    //     img = imread("data/cb_src.png");
+    //     undistort(img, imgUndistorted, intrinsic, distCoeffs);
 
-        imshow("image", img);
-        imshow("image undistorted", imgUndistorted);
-        rtnWaitKey = waitKey(1);
-        if (rtnWaitKey == 27)
-        {
-            imwrite("data/output/imgOrigin.png", img);
-            imwrite("data/output/imgUndistorted.png", imgUndistorted);
-            return 0;
-        }
-        // cap.release();
+    //     imshow("image", img);
+    //     imshow("image undistorted", imgUndistorted);
+    //     rtnWaitKey = waitKey(1);
+    //     if (rtnWaitKey == 27)
+    //     {
+    //         imwrite("data/output/imgOrigin.png", img);
+    //         imwrite("data/output/imgUndistorted.png", imgUndistorted);
+    //         return 0;
+    //     }
+    //     // cap.release();
 
-        return 0;
-    }
+    //     return 0;
+    // }
+    return 0;
 }
