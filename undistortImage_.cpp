@@ -8,6 +8,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
     Mat img;
+    VideoCapture cap(0);
     int m = 0, n = 0;
     int rtnWaitKey = 0;
 
@@ -50,21 +51,22 @@ int main(int argc, char **argv)
     Mat imgUndistorted;
     while (true)
     {
-        // cap >> img;
-        img = imread("data/cb_src.png");
+        cap >> img;
+        // img = imread("data/cb_src.png");
         undistort(img, imgUndistorted, intrinsicRead, distCoeffsRead);
+
+        resize(img, img, Size(), 0.5, 0.5);
+        resize(imgUndistorted, imgUndistorted, Size(), 0.5, 0.5);
 
         imshow("image", img);
         imshow("image undistorted", imgUndistorted);
-        rtnWaitKey = waitKey(0);
+        rtnWaitKey = waitKey(1);
         if (rtnWaitKey == 27)
         {
-            imwrite("data/output/imgUndistorted_finish.png", imgUndistorted);
+            // imwrite("imgOrigin_resized.png", img);
+            // imwrite("imgUndistorted_resized.png", imgUndistorted);
+            cap.release();
             return 0;
         }
-        // cap.release();
-
-        return 0;
     }
-    return 0;
 }
