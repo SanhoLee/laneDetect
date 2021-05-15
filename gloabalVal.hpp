@@ -1,6 +1,6 @@
 #ifndef __GLOBAL_VAR_HEADER__
 #define __GLOBAL_VAR_HEADER__
-#include "CV_header.hpp"
+// #include "CV_header.hpp"
 
 using namespace std;
 using namespace cv;

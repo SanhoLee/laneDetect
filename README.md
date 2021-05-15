@@ -4,4 +4,5 @@
 
 - [x] Refactoring
 - [x] Lane Detect by using HLS(Hue, Lightness, Saturation) Color Space
-- [ ] undistoting IMG
+- [x] undistoting IMG
+- [ ] functionalize code.
