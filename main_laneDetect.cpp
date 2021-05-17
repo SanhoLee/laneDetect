@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     Combined img :: best img after preprocessing from unwarping to color channel combinineg.
      */
 
-    img = imread("data/cb_src.png");
+    img = imread("data/cac07407-196cd6f8.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;
