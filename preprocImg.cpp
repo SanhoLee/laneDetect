@@ -1,29 +1,39 @@
 #include <iostream>
 #include <fstream>
 #include "preprocImg.hpp"
-#define MODE_HLS 1
-#define MODE_LAB 2
+#define HLS_CHANNEL 0
+#define LAB_CHANNEL 1
+
+#define H_FILTER 0
+#define L_FILTER 1
+#define S_FILTER 2
+
+#define L_FILTER_ 0
+#define A_FILTER_ 1
+#define B_FILTER_ 2
 
 char CALBR_FILE[256] = "cameraCalibrationData/out.txt";
 
 Mat preprocImg(Mat img, Mat *invMatx)
 {
-    Mat imgUndistort, imgUnwarp, imgHLS;
-    // Todos...
-    // 사다리꼴, 사각형 좌표 초기화 필요함. 대략적으로 잡기.
+    Mat imgUndistort, imgUnwarp;
+    Mat imgHLS_noH, imgHLS_noL, imgHLS_noS;
 
-    // undistort img.
+    /* undistort img. */
     imgUndistort = undistortingImg(img, true);
 
-    // perspective transform(3d -> 2d(bird's view))
+    /* perspective transform(3d -> 2d(bird's view)) */
     imgUnwarp = unWarpingImg(imgUndistort, &invMatx, false);
 
-    // color space filtering
-    imgHLS = Filtering_imgPixel(imgUnwarp, MODE_HLS);
-    // imgLAB = Filtering_imgPixel(imgUnwarp, MODE_LAB);
+    /* color space filtering */
+    imgHLS_noH = filterImg(imgUnwarp, HLS_CHANNEL, H_FILTER);
+    imgHLS_noL = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
+    imgHLS_noS = filterImg(imgUnwarp, HLS_CHANNEL, S_FILTER);
 
     imshow("imgUnwarp", imgUnwarp);
-    imshow("imgHLS", imgHLS);
+    imshow("HLS - H filter", imgHLS_noH);
+    imshow("HLS - L filter", imgHLS_noL);
+    imshow("HLS - S filter", imgHLS_noS);
     waitKey(0);
 
     // combined best color channel together.
@@ -33,52 +43,79 @@ Mat preprocImg(Mat img, Mat *invMatx)
     return img;
 };
 
-Mat Filtering_imgPixel(Mat imgUnwarp, int mode)
+Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
 {
-    int iret = 0;
+    /*
+    channel mode definition.
+        0 : Hue
+        1 : Lightness
+        2 : Saturation
+        
+        hue max : 179, l and s max : 255
+    */
     Mat imgConverted;
-    Mat imgFiltered;
     Mat imgOUT = Mat(720, 1280, CV_8UC3);
 
-    cvtColor(imgUnwarp, imgConverted, COLOR_BGR2RGB);
-    if (mode == 1)
+    /* 1. convert color channel from BGR to HLS or LAB. */
+    if (toColorChannel == HLS_CHANNEL)
     {
-        // MODE_HLS
-        // hue max : 179, l and s max : 255
-        cvtColor(imgConverted, imgConverted, COLOR_RGB2HLS);
+        cvtColor(imgUnwarp, imgConverted, COLOR_BGR2HLS);
+    }
+    else if (toColorChannel == LAB_CHANNEL)
+    {
+        cvtColor(imgUnwarp, imgConverted, COLOR_BGR2Lab);
+    }
 
-        // color channel filtering.
-        // help -->  https://stackoverflow.com/questions/7899108/opencv-get-pixel-channel-value-from-mat-image
+    /* 2. pixel pointer variable setting.
+    help -->  https://stackoverflow.com/questions/7899108/opencv-get-pixel-channel-value-from-mat-image
+    */
+    uint8_t *pixelPtr = (uint8_t *)imgConverted.data;
+    int cn = imgConverted.channels();
 
-        // imgConverted.rows : 720
-        // imgConverted.cols : 1280
-
-        uint8_t *pixelPtr = (uint8_t *)imgConverted.data;
-        int cn = imgConverted.channels();
-        Scalar_<uint8_t> hlsPixel;
+    switch (mode)
+    {
+    case 0:
+        // set H space 0
         for (int i = 0; i < imgConverted.rows; i++)
         {
             for (int j = 0; j < imgConverted.cols; j++)
             {
-                /* when it needs to handle each channel value. */
-                // hlsPixel.val[0] = pixelPtr[i * imgConverted.cols * cn + j * cn + 0];
-                // hlsPixel.val[1] = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
-                // hlsPixel.val[2] = pixelPtr[i * imgConverted.cols * cn + j * cn + 2];
-
+                imgOUT.at<Vec3b>(i, j)[0] = 0;
+                imgOUT.at<Vec3b>(i, j)[1] = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
+                imgOUT.at<Vec3b>(i, j)[2] = pixelPtr[i * imgConverted.cols * cn + j * cn + 2];
+            }
+        }
+        break;
+    case 1:
+        // set L space 0
+        for (int i = 0; i < imgConverted.rows; i++)
+        {
+            for (int j = 0; j < imgConverted.cols; j++)
+            {
                 imgOUT.at<Vec3b>(i, j)[0] = pixelPtr[i * imgConverted.cols * cn + j * cn + 0];
-                // imgOUT.at<Vec3b>(i, j)[1] = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
                 imgOUT.at<Vec3b>(i, j)[1] = 0;
                 imgOUT.at<Vec3b>(i, j)[2] = pixelPtr[i * imgConverted.cols * cn + j * cn + 2];
             }
         }
-    }
-    else if (mode == 2)
-    {
-        // MODE_LAB
-        cvtColor(imgUnwarp, imgConverted, COLOR_BGR2Lab);
+        break;
+
+    case 2:
+        // set S space 0
+        for (int i = 0; i < imgConverted.rows; i++)
+        {
+            for (int j = 0; j < imgConverted.cols; j++)
+            {
+                imgOUT.at<Vec3b>(i, j)[0] = pixelPtr[i * imgConverted.cols * cn + j * cn + 0];
+                imgOUT.at<Vec3b>(i, j)[1] = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
+                imgOUT.at<Vec3b>(i, j)[2] = 0;
+            }
+        }
+        break;
+
+    default:
+        break;
     }
 
-    // return imgConverted;
     return imgOUT;
 }
 

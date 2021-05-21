@@ -9,7 +9,7 @@ using namespace cv;
 Mat preprocImg(Mat img, Mat *invMatx);
 Mat undistortingImg(Mat img, bool activateThis);
 Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone);
-Mat Filtering_imgPixel(Mat imgUnwarp, int mode);
+Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode);
 
 int getMatrixVal(char calibration_matrix_file[], Mat *intrinsicRead, Mat *distCoeffsRead);
 
