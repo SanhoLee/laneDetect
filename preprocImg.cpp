@@ -19,6 +19,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat imgUndistort, imgUnwarp;
     Mat imgHLS_H, imgHLS_L, imgHLS_S;
     Mat imgLAB_L, imgLAB_A, imgLAB_B;
+    Mat imgSobelX, imgSobelY, imgSobelMag;
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -31,23 +32,46 @@ Mat preprocImg(Mat img, Mat *invMatx)
      LAB, B channel is the best for detecting yellow lane. */
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
-
-    /* COLORMAP for grayscale. */
-    applyColorMap(imgHLS_L, imgHLS_L, COLORMAP_BONE);
-    applyColorMap(imgLAB_B, imgLAB_B, COLORMAP_BONE);
-
     imshow("HLS - L filter", imgHLS_L);
-    imshow("LAB - B filter", imgLAB_B);
+    // imshow("LAB - B filter", imgLAB_B);
+
+    // todos...
+    /* Gradient Threshold :: edge detector :: sobel edge */
+    imgSobelX = applySobelEdge(imgHLS_L, 1, 0);
+    imgSobelY = applySobelEdge(imgHLS_L, 0, 1);
+    imshow("L filtered - Sobel X ", imgSobelX);
+    imshow("L filtered - Sobel Y ", imgSobelY);
 
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
 
-    // combined best color channel together.
-
-    // return combined best output img.
-
     return img;
 };
+
+Mat applySobelEdge(Mat imgSRC, int dX, int dY)
+{
+    Mat grad_xy, abs_grad_x, abs_grad_y;
+    Mat grad;
+    int ddepth = CV_16S;
+
+    // gradient either X or Y pixel direction.
+    Sobel(imgSRC, grad_xy, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
+
+    // converting back to 8 bit.
+    if (dX == 1 && !dY)
+    {
+        convertScaleAbs(grad_xy, abs_grad_x);
+        addWeighted(abs_grad_x, 0.5, abs_grad_x, 0, 0, grad);
+        return abs_grad_x;
+    }
+    else if (dY == 1 && !dX)
+    {
+        convertScaleAbs(grad_xy, abs_grad_y);
+        addWeighted(abs_grad_y, 0, abs_grad_y, 0.5, 0, grad);
+        return abs_grad_y;
+    }
+    return imgSRC;
+}
 
 Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
 {
@@ -123,6 +147,11 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
         break;
     }
 
+    /* COLORMAP for grayscale.     
+    ref : https://learnopencv.com/applycolormap-for-pseudocoloring-in-opencv-c-python/
+    */
+    applyColorMap(imgOUT, imgOUT, COLORMAP_BONE);
+
     return imgOUT;
 }
 
@@ -159,7 +188,7 @@ Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone)
     int width, height;
     vector<Point2f> srcRectCoord;
     vector<Point2f> dstRectCoord;
-    int dstX = 280;
+    int dstX = 350;
 
     width = imgUndistort.cols;
     height = imgUndistort.rows;
