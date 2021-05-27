@@ -10,7 +10,7 @@ Mat preprocImg(Mat img, Mat *invMatx);
 Mat undistortingImg(Mat img, bool activateThis);
 Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone);
 Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode);
-Mat absSobelEdge(Mat imgSRC, int dX, int dY);
+Mat absSobel_Thres(Mat imgSRC, int dX, int dY, int lowThres, int highThres);
 
 int getMatrixVal(char calibration_matrix_file[], Mat *intrinsicRead, Mat *distCoeffsRead);
 

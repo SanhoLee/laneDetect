@@ -21,31 +21,35 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat imgLAB_L, imgLAB_A, imgLAB_B;
     Mat imgSobelX, imgSobelY, imgSobelMag;
 
+    int lowThres, highThres;
+
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
 
     /* perspective transform(3d -> 2d(bird's view)) */
     imgUnwarp = unWarpingImg(imgUndistort, &invMatx, false);
 
-    /* color space filtering 
+    /* color space filtering, returned gray scale IMG. 
      HLS, L channel is the best for detecting white lane. 
      LAB, B channel is the best for detecting yellow lane. */
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
 
-    cout << "HLS_L channel :: " << imgHLS_L.channels() << endl;
-    cout << "LAB_B channel :: " << imgLAB_B.channels() << endl;
-
-    imshow("HLS - L filter", imgHLS_L);
-    imshow("LAB - B filter", imgLAB_B);
-
-    // todos...
     /* Gradient Threshold :: edge detector :: sobel edge */
-    // imgSobelX = absSobelEdge(imgHLS_L, 1, 0);
-    // imgSobelY = absSobelEdge(imgHLS_L, 0, 1);
+    lowThres = 50;
+    highThres = 150;
 
-    // imshow("L filtered - Sobel X ", imgSobelX);
-    // imshow("L filtered - Sobel Y ", imgSobelY);
+    // imgSobelX = absSobel_Thres(imgLAB_B, 1, 0, lowThres, highThres);
+    // imgSobelY = absSobel_Thres(imgLAB_B, 0, 1, lowThres, highThres);
+
+    imgSobelX = absSobel_Thres(imgHLS_L, 1, 0, lowThres, highThres);
+    imgSobelY = absSobel_Thres(imgHLS_L, 0, 1, lowThres, highThres);
+
+    imshow("Sobel X on Boundary. ", imgSobelX);
+    imshow("Sobel Y on Boundary. ", imgSobelY);
+
+    // imshow("LAB img, B filterd.", imgLAB_B);
+    imshow("HLS img, L filterd.", imgHLS_L);
 
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
@@ -53,63 +57,39 @@ Mat preprocImg(Mat img, Mat *invMatx)
     return img;
 };
 
-Mat absSobelEdge(Mat imgSRC, int dX, int dY)
+Mat absSobel_Thres(Mat imgGray, int dX, int dY, int lowThres, int highThres)
 {
     Mat raw_grad, abs_grad;
-    Mat grad, scaled_sobel;
+    Mat grad, bin_thres_sobel;
     Mat binary_sobel, binary_out;
     int ddepth = CV_64F;
-    int low_Thres = 50;
-    int high_Thres = 150;
     double minVal, maxVal;
 
     // gradient either X or Y pixel direction.
-    Sobel(imgSRC, raw_grad, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
+    Sobel(imgGray, raw_grad, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
 
     // make absolute value and converting back to 8 bit.
     convertScaleAbs(raw_grad, abs_grad);
 
-    // cout << abs_grad.at<Vec3b>(50, 868) << endl;
-    // abs_grad.at<Vec3b>(50, 868)[2] = 100;
-    // cout << abs_grad.at<Vec3b>(50, 868) << endl;
-
     // declare zero mat.
-    scaled_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, CV_8UC1);
-
-    // for (int i = 0; i < scaled_sobel.rows; i++)
-    // {
-    //     for (int j = 0; j < scaled_sobel.cols; j++)
-    //     {
-    //         cout << scaled_sobel.at<Vec3b>(i, j) << endl;
-    //     }
-    // }
+    bin_thres_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, CV_8UC1);
 
     // apply high and low threshold boundary.
-    // for (int i = 0; i < abs_grad.rows; i++)
-    // {
-    //     for (int j = 0; j < abs_grad.cols; j++)
-    //     {
-    //         if (abs_grad.at<Vec3b>(i, j)[1] > low_Thres && abs_grad.at<Vec3b>(i, j)[1] < high_Thres)
-    //         {
-    //             // cout << abs_grad.at<Vec3b>(i, j) << endl;
-    //             cout << scaled_sobel.at<int>(i, j) << endl;
-    //         }
-    //     }
-    // }
+    for (int i = 0; i < abs_grad.rows; i++)
+    {
+        for (int j = 0; j < abs_grad.cols; j++)
+        {
+            if (
+                abs_grad.at<uint8_t>(i, j) > lowThres &&
+                abs_grad.at<uint8_t>(i, j) < highThres)
+            {
+                // set max value among 8 bit range.
+                bin_thres_sobel.at<uint8_t>(i, j) = 255;
+            }
+        }
+    }
 
-    // todos
-    // give value 1 if the gray scalor value is on Thres boundary.
-    // number of channel : 3 (abs_grad)
-    // for (int i = 0; i < scaled_sobel.rows; i++)
-    // {
-    //     for (int j = 0; j < scaled_sobel.cols; j++)
-    //     {
-    //         cout << scaled_sobel.at<uint8_t>(i, j) << endl;
-    //     }
-    // }
-
-    // return scaled_sobel;
-    return abs_grad;
+    return bin_thres_sobel;
 }
 
 void applySobelThres(Mat unWarp, Mat filteredImg, int maxThres, int minThres)
