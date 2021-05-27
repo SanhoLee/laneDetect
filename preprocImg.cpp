@@ -32,15 +32,20 @@ Mat preprocImg(Mat img, Mat *invMatx)
      LAB, B channel is the best for detecting yellow lane. */
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
+
+    cout << "HLS_L channel :: " << imgHLS_L.channels() << endl;
+    cout << "LAB_B channel :: " << imgLAB_B.channels() << endl;
+
     imshow("HLS - L filter", imgHLS_L);
-    // imshow("LAB - B filter", imgLAB_B);
+    imshow("LAB - B filter", imgLAB_B);
 
     // todos...
     /* Gradient Threshold :: edge detector :: sobel edge */
-    imgSobelX = applySobelEdge(imgHLS_L, 1, 0);
-    imgSobelY = applySobelEdge(imgHLS_L, 0, 1);
-    imshow("L filtered - Sobel X ", imgSobelX);
-    imshow("L filtered - Sobel Y ", imgSobelY);
+    // imgSobelX = absSobelEdge(imgHLS_L, 1, 0);
+    // imgSobelY = absSobelEdge(imgHLS_L, 0, 1);
+
+    // imshow("L filtered - Sobel X ", imgSobelX);
+    // imshow("L filtered - Sobel Y ", imgSobelY);
 
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
@@ -48,29 +53,67 @@ Mat preprocImg(Mat img, Mat *invMatx)
     return img;
 };
 
-Mat applySobelEdge(Mat imgSRC, int dX, int dY)
+Mat absSobelEdge(Mat imgSRC, int dX, int dY)
 {
-    Mat grad_xy, abs_grad_x, abs_grad_y;
-    Mat grad;
-    int ddepth = CV_16S;
+    Mat raw_grad, abs_grad;
+    Mat grad, scaled_sobel;
+    Mat binary_sobel, binary_out;
+    int ddepth = CV_64F;
+    int low_Thres = 50;
+    int high_Thres = 150;
+    double minVal, maxVal;
 
     // gradient either X or Y pixel direction.
-    Sobel(imgSRC, grad_xy, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
+    Sobel(imgSRC, raw_grad, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
 
-    // converting back to 8 bit.
-    if (dX == 1 && !dY)
-    {
-        convertScaleAbs(grad_xy, abs_grad_x);
-        addWeighted(abs_grad_x, 0.5, abs_grad_x, 0, 0, grad);
-        return abs_grad_x;
-    }
-    else if (dY == 1 && !dX)
-    {
-        convertScaleAbs(grad_xy, abs_grad_y);
-        addWeighted(abs_grad_y, 0, abs_grad_y, 0.5, 0, grad);
-        return abs_grad_y;
-    }
-    return imgSRC;
+    // make absolute value and converting back to 8 bit.
+    convertScaleAbs(raw_grad, abs_grad);
+
+    // cout << abs_grad.at<Vec3b>(50, 868) << endl;
+    // abs_grad.at<Vec3b>(50, 868)[2] = 100;
+    // cout << abs_grad.at<Vec3b>(50, 868) << endl;
+
+    // declare zero mat.
+    scaled_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, CV_8UC1);
+
+    // for (int i = 0; i < scaled_sobel.rows; i++)
+    // {
+    //     for (int j = 0; j < scaled_sobel.cols; j++)
+    //     {
+    //         cout << scaled_sobel.at<Vec3b>(i, j) << endl;
+    //     }
+    // }
+
+    // apply high and low threshold boundary.
+    // for (int i = 0; i < abs_grad.rows; i++)
+    // {
+    //     for (int j = 0; j < abs_grad.cols; j++)
+    //     {
+    //         if (abs_grad.at<Vec3b>(i, j)[1] > low_Thres && abs_grad.at<Vec3b>(i, j)[1] < high_Thres)
+    //         {
+    //             // cout << abs_grad.at<Vec3b>(i, j) << endl;
+    //             cout << scaled_sobel.at<int>(i, j) << endl;
+    //         }
+    //     }
+    // }
+
+    // todos
+    // give value 1 if the gray scalor value is on Thres boundary.
+    // number of channel : 3 (abs_grad)
+    // for (int i = 0; i < scaled_sobel.rows; i++)
+    // {
+    //     for (int j = 0; j < scaled_sobel.cols; j++)
+    //     {
+    //         cout << scaled_sobel.at<uint8_t>(i, j) << endl;
+    //     }
+    // }
+
+    // return scaled_sobel;
+    return abs_grad;
+}
+
+void applySobelThres(Mat unWarp, Mat filteredImg, int maxThres, int minThres)
+{
 }
 
 Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
@@ -85,7 +128,8 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
     */
     Mat imgConverted;
     // Mat imgOUT = Mat(720, 1280, CV_8UC3);
-    Mat imgOUT = Mat::zeros(720, 1280, CV_8UC3);
+    // Mat imgOUT = Mat::zeros(720, 1280, CV_8UC3);
+    Mat imgOUT = Mat::zeros(720, 1280, CV_8UC1);
 
     /* 1. convert color channel from BGR to HLS or LAB. */
     if (toColorChannel == HLS_CHANNEL)
@@ -111,9 +155,7 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
         {
             for (int j = 0; j < imgConverted.cols; j++)
             {
-                imgOUT.at<Vec3b>(i, j)[0] = pixelPtr[i * imgConverted.cols * cn + j * cn + 0];
-                // imgOUT.at<Vec3b>(i, j)[1] = 0;
-                // imgOUT.at<Vec3b>(i, j)[2] = 0;
+                imgOUT.at<uint8_t>(i, j) = pixelPtr[i * imgConverted.cols * cn + j * cn + 0];
             }
         }
         break;
@@ -123,9 +165,7 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
         {
             for (int j = 0; j < imgConverted.cols; j++)
             {
-                // imgOUT.at<Vec3b>(i, j)[0] = 0;
-                imgOUT.at<Vec3b>(i, j)[1] = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
-                // imgOUT.at<Vec3b>(i, j)[2] = 0;
+                imgOUT.at<uint8_t>(i, j) = pixelPtr[i * imgConverted.cols * cn + j * cn + 1];
             }
         }
         break;
@@ -136,9 +176,7 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
         {
             for (int j = 0; j < imgConverted.cols; j++)
             {
-                // imgOUT.at<Vec3b>(i, j)[0] = 0;
-                // imgOUT.at<Vec3b>(i, j)[1] = 0;
-                imgOUT.at<Vec3b>(i, j)[2] = pixelPtr[i * imgConverted.cols * cn + j * cn + 2];
+                imgOUT.at<uint8_t>(i, j) = pixelPtr[i * imgConverted.cols * cn + j * cn + 2];
             }
         }
         break;
@@ -147,10 +185,14 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
         break;
     }
 
-    /* COLORMAP for grayscale.     
+    /* 
+    COLORMAP for grayscale.     
     ref : https://learnopencv.com/applycolormap-for-pseudocoloring-in-opencv-c-python/
+
+     applyColorMap(imgOUT, imgOUT, COLORMAP_BONE);
+     컬러맵을 쓰니깐 채널이 1개에서 3개가 되버렸다. 이 메쏘드는 안쓰는게 맞는듯.
+     컬러맵은 그레이 스케일에 대해서, 색상을 역으로 부여하는 꼴이 되기 때문에 채널이 3개로 늘어난 듯.
     */
-    applyColorMap(imgOUT, imgOUT, COLORMAP_BONE);
 
     return imgOUT;
 }
