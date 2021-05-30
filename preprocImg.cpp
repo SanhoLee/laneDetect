@@ -23,10 +23,14 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat sobelMag, sobelDir;
     int edgeLow = 50, edgeHigh = 150;
     int magLow = 100, magHigh = 190;
+    double dirLow = 0, dirHigh = CV_PI / 2;
+
     int magKernelSize = 3;
+    int dirKernelSize = 3;
 
     int mag_threshold[2] = {magLow, magHigh};
     int edge_threshold[2] = {edgeLow, edgeHigh};
+    double dir_threshold[2] = {dirLow, dirHigh};
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -47,11 +51,12 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imgSobelY = absSobel_Thres(imgHLS_L, 0, 1, edge_threshold);
 
     sobelMag = grayTo_Mag(imgHLS_L, magKernelSize, mag_threshold);
-    // sobelDir = grayTo_Dir();
+    sobelDir = grayTo_Dir(imgHLS_L, dirKernelSize, dir_threshold);
 
     imshow("Sobel X on Boundary. ", imgSobelX);
     imshow("Sobel Y on Boundary. ", imgSobelY);
     imshow("Sobel MAG on Boundary. ", sobelMag);
+    imshow("Sobel DIR on Boundary. ", sobelDir);
 
     // imshow("LAB img, B filterd.", imgLAB_B);
     imshow("HLS img, L filterd.", imgHLS_L);
@@ -61,6 +66,59 @@ Mat preprocImg(Mat img, Mat *invMatx)
 
     return img;
 };
+
+Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
+{
+    Mat sobelX, sobelY;
+    Mat sobelXAbs, sobelYAbs;
+    Mat binaryOutput;
+
+    // sobel edge both x and y direction
+    Sobel(gray, sobelX, CV_64F, 1, 0, dirKernelSize, 1, 0, BORDER_DEFAULT);
+    Sobel(gray, sobelY, CV_64F, 0, 1, dirKernelSize, 1, 0, BORDER_DEFAULT);
+
+    convertScaleAbs(sobelX, sobelXAbs);
+    convertScaleAbs(sobelY, sobelYAbs);
+
+    // calculate gradient direction by calculating arctan value for absoute one.
+    Mat absGradDir = Mat::zeros(sobelXAbs.rows, sobelYAbs.cols, CV_64F);
+    Mat absGradDir_8b;
+
+    int cnt = 0;
+
+    for (int i = 0; i < sobelXAbs.rows; i++)
+    {
+        for (int j = 0; j < sobelXAbs.cols; j++)
+        {
+            double temp = 0.0;
+            absGradDir.at<double>(i, j) = atan2(
+                (double)sobelYAbs.at<uint8_t>(i, j),
+                (double)sobelXAbs.at<uint8_t>(i, j));
+
+            temp = absGradDir.at<double>(i, j);
+            if (temp != 0.0)
+            {
+                // cout << i << "," << j << ", absGradDir Value :: " << temp << endl;
+                cnt++;
+            }
+            /* code */
+        }
+    }
+
+    cout << "cnt :: " << cnt << endl;
+
+    // cout << "basGradDir :: " << absGradDir << endl;
+
+    // scale down to 8 bit
+    convertScaleAbs(absGradDir, absGradDir_8b);
+
+    // temp...
+    absGradDir_8b = absGradDir_8b * 100;
+    // thresholding with sum of sqrt value.
+    // threshold(absGradDir_8b, binaryOutput, dir_threshold[0], dir_threshold[1], THRESH_BINARY);
+
+    return absGradDir_8b;
+}
 
 Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
 {
