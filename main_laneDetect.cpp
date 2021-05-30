@@ -14,6 +14,7 @@ int main(int argc, char **argv)
      */
 
     img = imread("data/straight_lines1.jpg");
+    // img = imread("data/straight_lines2.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;

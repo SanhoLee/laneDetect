@@ -19,9 +19,14 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat imgUndistort, imgUnwarp;
     Mat imgHLS_H, imgHLS_L, imgHLS_S;
     Mat imgLAB_L, imgLAB_A, imgLAB_B;
-    Mat imgSobelX, imgSobelY, imgSobelMag;
+    Mat imgSobelX, imgSobelY;
+    Mat sobelMag, sobelDir;
+    int edgeLow = 50, edgeHigh = 150;
+    int magLow = 100, magHigh = 190;
+    int magKernelSize = 3;
 
-    int lowThres, highThres;
+    int mag_threshold[2] = {magLow, magHigh};
+    int edge_threshold[2] = {edgeLow, edgeHigh};
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -35,18 +40,18 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
 
-    /* Gradient Threshold :: edge detector :: sobel edge */
-    lowThres = 50;
-    highThres = 150;
+    // imgSobelX = absSobel_Thres(imgLAB_B, 1, 0, edgeLow, edgeHigh);
+    // imgSobelY = absSobel_Thres(imgLAB_B, 0, 1, edgeLow, edgeHigh);
 
-    // imgSobelX = absSobel_Thres(imgLAB_B, 1, 0, lowThres, highThres);
-    // imgSobelY = absSobel_Thres(imgLAB_B, 0, 1, lowThres, highThres);
+    imgSobelX = absSobel_Thres(imgHLS_L, 1, 0, edge_threshold);
+    imgSobelY = absSobel_Thres(imgHLS_L, 0, 1, edge_threshold);
 
-    imgSobelX = absSobel_Thres(imgHLS_L, 1, 0, lowThres, highThres);
-    imgSobelY = absSobel_Thres(imgHLS_L, 0, 1, lowThres, highThres);
+    sobelMag = grayTo_Mag(imgHLS_L, magKernelSize, mag_threshold);
+    // sobelDir = grayTo_Dir();
 
     imshow("Sobel X on Boundary. ", imgSobelX);
     imshow("Sobel Y on Boundary. ", imgSobelY);
+    imshow("Sobel MAG on Boundary. ", sobelMag);
 
     // imshow("LAB img, B filterd.", imgLAB_B);
     imshow("HLS img, L filterd.", imgHLS_L);
@@ -57,7 +62,32 @@ Mat preprocImg(Mat img, Mat *invMatx)
     return img;
 };
 
-Mat absSobel_Thres(Mat imgGray, int dX, int dY, int lowThres, int highThres)
+Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
+{
+    Mat sobelX, sobelY;
+    Mat magSobel, magSobel_8b;
+    Mat binaryOutput;
+
+    // sobel edge both x and y direction
+    Sobel(gray, sobelX, CV_64F, 1, 0, magKernelSize, 1, 0, BORDER_DEFAULT);
+    Sobel(gray, sobelY, CV_64F, 0, 1, magKernelSize, 1, 0, BORDER_DEFAULT);
+
+    // calculate sum of sqrt value for x and y gradient(each sobel output)
+    pow(sobelX, 2, sobelX);
+    pow(sobelY, 2, sobelY);
+    sqrt(sobelX + sobelY, magSobel);
+
+    // scale down to 8 bit
+    // magSobel is already have absolute values. It is just changed to scale down to 8 bit.
+    convertScaleAbs(magSobel, magSobel_8b);
+
+    // thresholding with sum of sqrt value.
+    threshold(magSobel_8b, binaryOutput, mag_threshold[0], mag_threshold[1], THRESH_BINARY);
+
+    return binaryOutput;
+};
+
+Mat absSobel_Thres(Mat imgGray, int dX, int dY, int edge_threshold[])
 {
     Mat raw_grad, abs_grad;
     Mat grad, bin_thres_sobel;
@@ -72,7 +102,7 @@ Mat absSobel_Thres(Mat imgGray, int dX, int dY, int lowThres, int highThres)
     convertScaleAbs(raw_grad, abs_grad);
 
     // (by using opencv function)apply high and low threshold boundary.
-    threshold(abs_grad, bin_thres_sobel, lowThres, highThres, THRESH_BINARY);
+    threshold(abs_grad, bin_thres_sobel, edge_threshold[0], edge_threshold[1], THRESH_BINARY);
 
     return bin_thres_sobel;
 }
