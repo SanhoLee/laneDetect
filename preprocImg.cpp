@@ -71,23 +71,8 @@ Mat absSobel_Thres(Mat imgGray, int dX, int dY, int lowThres, int highThres)
     // make absolute value and converting back to 8 bit.
     convertScaleAbs(raw_grad, abs_grad);
 
-    // declare zero mat.
-    bin_thres_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, CV_8UC1);
-
-    // apply high and low threshold boundary.
-    for (int i = 0; i < abs_grad.rows; i++)
-    {
-        for (int j = 0; j < abs_grad.cols; j++)
-        {
-            if (
-                abs_grad.at<uint8_t>(i, j) > lowThres &&
-                abs_grad.at<uint8_t>(i, j) < highThres)
-            {
-                // set max value among 8 bit range.
-                bin_thres_sobel.at<uint8_t>(i, j) = 255;
-            }
-        }
-    }
+    // (by using opencv function)apply high and low threshold boundary.
+    threshold(abs_grad, bin_thres_sobel, lowThres, highThres, THRESH_BINARY);
 
     return bin_thres_sobel;
 }
