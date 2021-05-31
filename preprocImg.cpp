@@ -23,10 +23,11 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat sobelMag, sobelDir;
     int edgeLow = 50, edgeHigh = 150;
     int magLow = 100, magHigh = 190;
-    double dirLow = 0.0, dirHigh = CV_PI / 2;
+    // double dirLow = 0.0, dirHigh = CV_PI / 2;
+    double dirLow = 0.1, dirHigh = 1.5;
 
     int magKernelSize = 3;
-    int dirKernelSize = 3;
+    int dirKernelSize = 15;
 
     int mag_threshold[2] = {magLow, magHigh};
     int edge_threshold[2] = {edgeLow, edgeHigh};
@@ -78,11 +79,14 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
     // sobel edge both x and y direction
     Sobel(gray, sobelX, CV_64F, 1, 0, dirKernelSize, 1, 0, BORDER_DEFAULT);
     Sobel(gray, sobelY, CV_64F, 0, 1, dirKernelSize, 1, 0, BORDER_DEFAULT);
-
-    // calculate gradient direction by calculating arctan value for absoute one.
-    Mat gradDir = Mat::zeros(sobelX.rows, sobelY.cols, CV_64F);
     sobelX = abs(sobelX);
     sobelY = abs(sobelY);
+
+    // GET gradient direction by calculating arctan value for absoute ones.
+
+    // todos... 아래를 zeros가 아니라 파이썬의 ones_like로 초기화 하고 작업하면 될듯????
+    // Mat gradDir = Mat::zeros(sobelX.rows, sobelY.cols, CV_64F);
+    Mat gradDir = Mat::ones(sobelX.rows, sobelY.cols, CV_64F);
     for (int i = 0; i < sobelX.rows; i++)
     {
         for (int j = 0; j < sobelX.cols; j++)
@@ -95,10 +99,10 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
             {
                 gradDir.at<double>(i, j) = 0.0;
             }
-            else
-            {
-                gradDir.at<double>(i, j) = gradRadian;
-            }
+            // else
+            // {
+            //     gradDir.at<double>(i, j) = gradRadian;
+            // }
         }
     }
 
