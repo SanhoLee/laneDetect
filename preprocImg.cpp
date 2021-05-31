@@ -23,7 +23,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat sobelMag, sobelDir;
     int edgeLow = 50, edgeHigh = 150;
     int magLow = 100, magHigh = 190;
-    double dirLow = 0, dirHigh = CV_PI / 2;
+    double dirLow = 0.0, dirHigh = CV_PI / 2;
 
     int magKernelSize = 3;
     int dirKernelSize = 3;
@@ -53,6 +53,8 @@ Mat preprocImg(Mat img, Mat *invMatx)
     sobelMag = grayTo_Mag(imgHLS_L, magKernelSize, mag_threshold);
     sobelDir = grayTo_Dir(imgHLS_L, dirKernelSize, dir_threshold);
 
+    // applyColorMap(sobelDir, sobelDir, COLORMAP_BONE);
+
     imshow("Sobel X on Boundary. ", imgSobelX);
     imshow("Sobel Y on Boundary. ", imgSobelY);
     imshow("Sobel MAG on Boundary. ", sobelMag);
@@ -70,60 +72,47 @@ Mat preprocImg(Mat img, Mat *invMatx)
 Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
 {
     Mat sobelX, sobelY;
-    Mat sobelXAbs, sobelYAbs;
+    Mat min_dir, max_dir;
     Mat binaryOutput;
 
     // sobel edge both x and y direction
     Sobel(gray, sobelX, CV_64F, 1, 0, dirKernelSize, 1, 0, BORDER_DEFAULT);
     Sobel(gray, sobelY, CV_64F, 0, 1, dirKernelSize, 1, 0, BORDER_DEFAULT);
 
-    convertScaleAbs(sobelX, sobelXAbs);
-    convertScaleAbs(sobelY, sobelYAbs);
-
     // calculate gradient direction by calculating arctan value for absoute one.
-    Mat absGradDir = Mat::zeros(sobelXAbs.rows, sobelYAbs.cols, CV_64F);
-    Mat absGradDir_8b;
-
-    int cnt = 0;
-
-    for (int i = 0; i < sobelXAbs.rows; i++)
+    Mat gradDir = Mat::zeros(sobelX.rows, sobelY.cols, CV_64F);
+    sobelX = abs(sobelX);
+    sobelY = abs(sobelY);
+    for (int i = 0; i < sobelX.rows; i++)
     {
-        for (int j = 0; j < sobelXAbs.cols; j++)
+        for (int j = 0; j < sobelX.cols; j++)
         {
-            double temp = 0.0;
-            absGradDir.at<double>(i, j) = atan2(
-                (double)sobelYAbs.at<uint8_t>(i, j),
-                (double)sobelXAbs.at<uint8_t>(i, j));
-
-            temp = absGradDir.at<double>(i, j);
-            if (temp != 0.0)
+            double gradRadian = 0.0;
+            gradRadian = atan2(
+                sobelY.at<double>(i, j),
+                sobelX.at<double>(i, j));
+            if (gradRadian > dir_threshold[0] && gradRadian < dir_threshold[1])
             {
-                // cout << i << "," << j << ", absGradDir Value :: " << temp << endl;
-                cnt++;
+                gradDir.at<double>(i, j) = 0.0;
             }
-            /* code */
+            else
+            {
+                gradDir.at<double>(i, j) = gradRadian;
+            }
         }
     }
 
-    cout << "cnt :: " << cnt << endl;
+    // todos... 조금 더 보기..
+    // 결과를 보면, 흰->검, 검->흰 이 되면 정상적으로 돌아가는 느낌? (레퍼런스랑 비교했을때)
 
-    // cout << "basGradDir :: " << absGradDir << endl;
-
-    // scale down to 8 bit
-    convertScaleAbs(absGradDir, absGradDir_8b);
-
-    // temp...
-    absGradDir_8b = absGradDir_8b * 100;
-    // thresholding with sum of sqrt value.
-    // threshold(absGradDir_8b, binaryOutput, dir_threshold[0], dir_threshold[1], THRESH_BINARY);
-
-    return absGradDir_8b;
+    return gradDir;
 }
 
 Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
 {
     Mat sobelX, sobelY;
     Mat magSobel, magSobel_8b;
+    Mat min_mag, max_mag;
     Mat binaryOutput;
 
     // sobel edge both x and y direction
@@ -140,7 +129,11 @@ Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
     convertScaleAbs(magSobel, magSobel_8b);
 
     // thresholding with sum of sqrt value.
-    threshold(magSobel_8b, binaryOutput, mag_threshold[0], mag_threshold[1], THRESH_BINARY);
+    threshold(magSobel_8b, min_mag, mag_threshold[0], 255, THRESH_BINARY);
+    threshold(magSobel_8b, max_mag, mag_threshold[1], 255, THRESH_BINARY_INV);
+
+    // bitwise_and calculation
+    bitwise_and(min_mag, max_mag, binaryOutput);
 
     return binaryOutput;
 };
@@ -148,25 +141,27 @@ Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
 Mat absSobel_Thres(Mat imgGray, int dX, int dY, int edge_threshold[])
 {
     Mat raw_grad, abs_grad;
-    Mat grad, bin_thres_sobel;
-    Mat binary_sobel, binary_out;
+    Mat grad, min_bin_thres_sobel, max_bin_thres_sobel;
+    Mat binary_out;
     int ddepth = CV_64F;
     double minVal, maxVal;
 
     // gradient either X or Y pixel direction.
     Sobel(imgGray, raw_grad, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
+    abs_grad = abs(raw_grad);
+
+    // (by using opencv function, apply high and low threshold boundary.
+    threshold(abs_grad, min_bin_thres_sobel, edge_threshold[0], 255, THRESH_BINARY);
+    threshold(abs_grad, max_bin_thres_sobel, edge_threshold[1], 255, THRESH_BINARY_INV);
 
     // make absolute value and converting back to 8 bit.
-    convertScaleAbs(raw_grad, abs_grad);
+    convertScaleAbs(min_bin_thres_sobel, min_bin_thres_sobel);
+    convertScaleAbs(max_bin_thres_sobel, max_bin_thres_sobel);
 
-    // (by using opencv function)apply high and low threshold boundary.
-    threshold(abs_grad, bin_thres_sobel, edge_threshold[0], edge_threshold[1], THRESH_BINARY);
+    // bitwise and operation.
+    bitwise_and(min_bin_thres_sobel, max_bin_thres_sobel, binary_out);
 
-    return bin_thres_sobel;
-}
-
-void applySobelThres(Mat unWarp, Mat filteredImg, int maxThres, int minThres)
-{
+    return binary_out;
 }
 
 Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode)
