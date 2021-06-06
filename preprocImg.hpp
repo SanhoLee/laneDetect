@@ -13,6 +13,7 @@ Mat filterImg(Mat imgUnwarp, int toColorChannel, int mode);
 Mat absSobel_Thres(Mat imgSRC, int dX, int dY, int edge_threshold[]);
 Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[]);
 Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[]);
+Mat combine_threshold(Mat gray);
 
 int getMatrixVal(char calibration_matrix_file[], Mat *intrinsicRead, Mat *distCoeffsRead);
 

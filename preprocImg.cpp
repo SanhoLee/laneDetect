@@ -21,6 +21,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat imgLAB_L, imgLAB_A, imgLAB_B;
     Mat imgSobelX, imgSobelY;
     Mat sobelMag, sobelDir;
+    Mat hlsCombined, labCombined;
     int edgeLow = 50, edgeHigh = 150;
     int magLow = 100, magHigh = 190;
     // double dirLow = 0.0, dirHigh = CV_PI / 2;
@@ -45,30 +46,50 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
 
-    // imgSobelX = absSobel_Thres(imgLAB_B, 1, 0, edgeLow, edgeHigh);
-    // imgSobelY = absSobel_Thres(imgLAB_B, 0, 1, edgeLow, edgeHigh);
+    // imgSobelX = absSobel_Thres(imgLAB_B, 1, 0, edge_threshold);
+    // imgSobelY = absSobel_Thres(imgLAB_B, 0, 1, edge_threshold);
 
     imgSobelX = absSobel_Thres(imgHLS_L, 1, 0, edge_threshold);
     imgSobelY = absSobel_Thres(imgHLS_L, 0, 1, edge_threshold);
 
+    // sobelMag = grayTo_Mag(imgLAB_B, magKernelSize, mag_threshold);
+    // sobelDir = grayTo_Dir(imgLAB_B, dirKernelSize, dir_threshold);
     sobelMag = grayTo_Mag(imgHLS_L, magKernelSize, mag_threshold);
     sobelDir = grayTo_Dir(imgHLS_L, dirKernelSize, dir_threshold);
 
-    // applyColorMap(sobelDir, sobelDir, COLORMAP_BONE);
+    // ToDos...
+    // hlsCombined = combine_threshold(imgHLS_L, imgSobelX, imgSobelY, sobelMag, sobelDir);
+    hlsCombined = combine_threshold(imgHLS_L);
+    // normalize img pixel for each color channel ?
 
-    imshow("Sobel X on Boundary. ", imgSobelX);
-    imshow("Sobel Y on Boundary. ", imgSobelY);
+    // imshow("Sobel X on Boundary. ", imgSobelX);
+    // imshow("Sobel Y on Boundary. ", imgSobelY);
     imshow("Sobel MAG on Boundary. ", sobelMag);
     imshow("Sobel DIR on Boundary. ", sobelDir);
 
-    // imshow("LAB img, B filterd.", imgLAB_B);
-    imshow("HLS img, L filterd.", imgHLS_L);
+    imshow("LAB img, B filterd.", imgLAB_B);
+    // imshow("HLS img, L filterd.", imgHLS_L);
 
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
 
     return img;
 };
+
+Mat combine_threshold(Mat gray)
+{
+    Mat sobelx, sobely;
+    Mat magThres, dirThres;
+    Mat binaryOut;
+
+    /* PIPELINE for img preprocess */
+    // 1. sobel operation(x,y)
+    // 2. calculate MAG mat.
+    // 3. calculate DIR mat.
+    // 4. find combined pixel Mat.
+
+    return binaryOut;
+}
 
 Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
 {
@@ -83,10 +104,7 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
     sobelY = abs(sobelY);
 
     // GET gradient direction by calculating arctan value for absoute ones.
-
-    // todos... 아래를 zeros가 아니라 파이썬의 ones_like로 초기화 하고 작업하면 될듯????
-    // Mat gradDir = Mat::zeros(sobelX.rows, sobelY.cols, CV_64F);
-    Mat gradDir = Mat::ones(sobelX.rows, sobelY.cols, CV_64F);
+    Mat gradDir = Mat::ones(sobelX.rows, sobelX.cols, sobelX.type());
     for (int i = 0; i < sobelX.rows; i++)
     {
         for (int j = 0; j < sobelX.cols; j++)
@@ -99,15 +117,8 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
             {
                 gradDir.at<double>(i, j) = 0.0;
             }
-            // else
-            // {
-            //     gradDir.at<double>(i, j) = gradRadian;
-            // }
         }
     }
-
-    // todos... 조금 더 보기..
-    // 결과를 보면, 흰->검, 검->흰 이 되면 정상적으로 돌아가는 느낌? (레퍼런스랑 비교했을때)
 
     return gradDir;
 }
@@ -116,7 +127,6 @@ Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
 {
     Mat sobelX, sobelY;
     Mat magSobel, magSobel_8b;
-    Mat min_mag, max_mag;
     Mat binaryOutput;
 
     // sobel edge both x and y direction
@@ -128,13 +138,16 @@ Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
     pow(sobelY, 2, sobelY);
     sqrt(sobelX + sobelY, magSobel);
 
-    // scale down to 8 bit
-    // magSobel is already have absolute values. It is just changed to scale down to 8 bit.
-    convertScaleAbs(magSobel, magSobel_8b);
+    Mat min_mag = Mat::zeros(magSobel.rows, magSobel.cols, magSobel.type());
+    Mat max_mag = Mat::zeros(magSobel.rows, magSobel.cols, magSobel.type());
 
     // thresholding with sum of sqrt value.
-    threshold(magSobel_8b, min_mag, mag_threshold[0], 255, THRESH_BINARY);
-    threshold(magSobel_8b, max_mag, mag_threshold[1], 255, THRESH_BINARY_INV);
+    threshold(magSobel, min_mag, mag_threshold[0], 1, THRESH_BINARY);
+    threshold(magSobel, max_mag, mag_threshold[1], 1, THRESH_BINARY_INV);
+
+    // scale down to 8 bit and make having absolute value.
+    convertScaleAbs(min_mag, min_mag);
+    convertScaleAbs(max_mag, max_mag);
 
     // bitwise_and calculation
     bitwise_and(min_mag, max_mag, binaryOutput);
@@ -145,7 +158,7 @@ Mat grayTo_Mag(Mat gray, int magKernelSize, int mag_threshold[])
 Mat absSobel_Thres(Mat imgGray, int dX, int dY, int edge_threshold[])
 {
     Mat raw_grad, abs_grad;
-    Mat grad, min_bin_thres_sobel, max_bin_thres_sobel;
+    Mat grad;
     Mat binary_out;
     int ddepth = CV_64F;
     double minVal, maxVal;
@@ -154,9 +167,11 @@ Mat absSobel_Thres(Mat imgGray, int dX, int dY, int edge_threshold[])
     Sobel(imgGray, raw_grad, ddepth, dX, dY, 3, 1, 0, BORDER_DEFAULT);
     abs_grad = abs(raw_grad);
 
-    // (by using opencv function, apply high and low threshold boundary.
-    threshold(abs_grad, min_bin_thres_sobel, edge_threshold[0], 255, THRESH_BINARY);
-    threshold(abs_grad, max_bin_thres_sobel, edge_threshold[1], 255, THRESH_BINARY_INV);
+    // by using opencv function, apply high and low threshold boundary.
+    Mat min_bin_thres_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, abs_grad.type());
+    Mat max_bin_thres_sobel = Mat::zeros(abs_grad.rows, abs_grad.cols, abs_grad.type());
+    threshold(abs_grad, min_bin_thres_sobel, edge_threshold[0], 1, THRESH_BINARY);
+    threshold(abs_grad, max_bin_thres_sobel, edge_threshold[1], 1, THRESH_BINARY_INV);
 
     // make absolute value and converting back to 8 bit.
     convertScaleAbs(min_bin_thres_sobel, min_bin_thres_sobel);
