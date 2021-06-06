@@ -34,21 +34,16 @@ Mat preprocImg(Mat img, Mat *invMatx)
      LAB, B channel is the best for detecting yellow lane. */
     imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
     imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
+    imshow("LAB img, B filterd.", imgLAB_B);
+    imshow("HLS img, L filterd.", imgHLS_L);
 
     // ToDos...
-    hlsCombined = combine_threshold(imgHLS_L);
+    // hlsCombined = combine_threshold(imgHLS_L);
+    labCombined = combine_threshold(imgLAB_B);
 
     // normalize img pixel for each color channel ?
 
-    // imshow("Sobel X on Boundary. ", imgSobelX * 255);
-    // imshow("Sobel Y on Boundary. ", imgSobelY * 255);
-    // imshow("Sobel MAG on Boundary. ", sobelMag);
-    // imshow("Sobel DIR on Boundary. ", sobelDir);
-
-    // imshow("LAB img, B filterd.", imgLAB_B);
-    // imshow("HLS img, L filterd.", imgHLS_L);
     // imshow("imgUnwarp", imgUnwarp);
-
     // waitKey(0);
 
     return img;
@@ -58,10 +53,11 @@ Mat combine_threshold(Mat gray)
 {
     Mat sobelx, sobely;
     Mat magOut, dirOut;
-    Mat binaryOut;
-    int edgeThres[2] = {50, 150};
-    int magThres[2] = {100, 190};
-    double dirThres[2] = {0.1, 1.5};
+    Mat binaryOut = Mat::zeros(gray.rows, gray.cols, gray.type());
+
+    int edgeThres[2] = {50, 190};
+    int magThres[2] = {50, 190};
+    double dirThres[2] = {0.3, 1.51};
 
     int magKernel = 3;
     int dirKernel = 15;
@@ -78,12 +74,24 @@ Mat combine_threshold(Mat gray)
     dirOut = grayTo_Dir(gray, dirKernel, dirThres);
 
     // 4. find combined pixel Mat.
+    for (int i = 0; i < gray.rows; i++)
+    {
+        for (int j = 0; j < gray.cols; j++)
+        {
+            if ((sobelx.at<uint8_t>(i, j) == 1 && sobely.at<uint8_t>(i, j) == 1) ||
+                (magOut.at<uint8_t>(i, j) == 1 && dirOut.at<uint8_t>(i, j) == 1))
+            {
+                binaryOut.at<uint8_t>(i, j) = 1;
+            }
+        }
+    }
 
     // visualization
     imshow("sobelx", sobelx * 255);
     imshow("sobely", sobely * 255);
     imshow("magOut", magOut * 255);
     imshow("dirOut", dirOut * 255);
+    imshow("combine", binaryOut * 255);
     waitKey(0);
 
     return binaryOut;
@@ -137,6 +145,8 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[])
             }
         }
     }
+
+    convertScaleAbs(gradDir, gradDir);
 
     return gradDir;
 }

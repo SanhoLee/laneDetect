@@ -2,8 +2,9 @@
 
 ## TODO.
 
-- [x] Refactoring
 - [x] Lane Detect by using HLS(Hue, Lightness, Saturation) Color Space
 - [x] undistoting IMG
 - [x] filtering color channel from HLS and LAB color space.
-- [ ] functionalize code.
+- [x] combine both sobel operation and dir, mag gradient images.(img pipeline complete.)
+- [ ] Refactoring(keep processing)
+- [ ] functionalize code.(keep processing)
