@@ -37,17 +37,41 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imshow("LAB img, B filterd.", imgLAB_B);
     imshow("HLS img, L filterd.", imgHLS_L);
 
-    // ToDos...
     // hlsCombined = combine_threshold(imgHLS_L);
-    labCombined = combine_threshold(imgLAB_B);
+    // labCombined = combine_threshold(imgLAB_B);
 
+    // ToDos...
     // normalize img pixel for each color channel ?
+    imgHLS_L = normalize_HLS_L(imgUnwarp);
 
     // imshow("imgUnwarp", imgUnwarp);
     // waitKey(0);
 
     return img;
 };
+
+Mat normalize_HLS_L(Mat unWarp)
+{
+    /* normalizing L color channel pixel from hls img. */
+    Mat imgHLS_L, imgNormal;
+    double minVal, maxVal;
+    Point minLoc, maxLoc;
+
+    // get a single channel img(filtered one.)
+    imgHLS_L = filterImg(unWarp, HLS_CHANNEL, L_FILTER);
+
+    // get max, min value of the matrix.
+    minMaxLoc(imgHLS_L, &minVal, &maxVal, &minLoc, &maxLoc);
+
+    // make normalized img.
+    imgNormal = (255 / maxVal) * imgHLS_L;
+
+    imshow("normalized", imgNormal);
+    imshow("origin", imgHLS_L);
+    waitKey(0);
+
+    return unWarp;
+}
 
 Mat combine_threshold(Mat gray)
 {
@@ -87,12 +111,12 @@ Mat combine_threshold(Mat gray)
     }
 
     // visualization
-    imshow("sobelx", sobelx * 255);
-    imshow("sobely", sobely * 255);
-    imshow("magOut", magOut * 255);
-    imshow("dirOut", dirOut * 255);
-    imshow("combine", binaryOut * 255);
-    waitKey(0);
+    // imshow("sobelx", sobelx * 255);
+    // imshow("sobely", sobely * 255);
+    // imshow("magOut", magOut * 255);
+    // imshow("dirOut", dirOut * 255);
+    // imshow("combine", binaryOut * 255);
+    // waitKey(0);
 
     return binaryOut;
 }
