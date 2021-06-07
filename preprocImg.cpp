@@ -22,6 +22,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat imgSobelX, imgSobelY;
     Mat sobelMag, sobelDir;
     Mat hlsCombined, labCombined;
+    Mat combineOut;
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -38,19 +39,52 @@ Mat preprocImg(Mat img, Mat *invMatx)
     // hlsCombined = combine_threshold(imgHLS_L);
     // labCombined = combine_threshold(imgLAB_B);
 
-    // ToDos...
-    // normalize img pixel for each color channel ?
-    // imgHLS_L = normalize_HLS_L(imgUnwarp);
+    // normalize img pixel for each color channel
+    imgHLS_L = normalize_HLS_L(imgUnwarp);
     imgLAB_B = normalize_LAB_B(imgUnwarp);
 
-    // imshow("LAB img, B filterd.", imgLAB_B);
+    // combine hls and lab color pixel when either img pixel has 1 value or not.
+    combineOut = combine_both_img(imgHLS_L, imgLAB_B);
+
+    // ToDos...
+    // test with another pic frame.
+
     // imshow("HLS img, L filterd.", imgHLS_L * 255);
-    imshow("LAB img, B filterd.", imgLAB_B * 255);
+    // imshow("LAB img, B filterd.", imgLAB_B * 255);
+    imshow("combined OUT", combineOut * 255);
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
 
     return img;
 };
+
+Mat combine_both_img(Mat hls, Mat lab)
+{
+    Mat imgOut;
+
+    imgOut = make_zeros(hls);
+    for (int i = 0; i < imgOut.rows; i++)
+    {
+        for (int j = 0; j < imgOut.cols; j++)
+        {
+            if (hls.at<uint8_t>(i, j) == 1 || lab.at<uint8_t>(i, j) == 1)
+            {
+                imgOut.at<uint8_t>(i, j) = 1;
+            }
+        }
+    }
+    return imgOut;
+}
+
+Mat make_zeros(Mat img)
+{
+    return Mat::zeros(img.rows, img.cols, img.type());
+}
+
+Mat make_ones(Mat img)
+{
+    return Mat::ones(img.rows, img.cols, img.type());
+}
 
 Mat normalize_HLS_L(Mat unWarp)
 {
@@ -70,7 +104,7 @@ Mat normalize_HLS_L(Mat unWarp)
     imgNormal = (255 / maxVal) * imgHLS_L;
 
     // apply threshold for L channel.
-    Mat imgOut = Mat::zeros(imgNormal.rows, imgNormal.cols, imgNormal.type());
+    Mat imgOut = make_zeros(imgNormal);
     threshold(imgNormal, imgOut, lowThres, 1, THRESH_BINARY);
 
     return imgOut;
@@ -92,7 +126,7 @@ Mat normalize_LAB_B(Mat unWarp)
     minMaxLoc(imgLAB_B, &minVal, &maxVal, &minLoc, &maxLoc);
 
     // (conditional) make normalized img.
-    // B channel means a range from blue to yellow.
+    // B channel means a range from blue(0) to yellow(255).
     // So, the bigger values, it becomes close to yellow color.(yellow lane)
     if (maxVal > yellowCrit)
     {

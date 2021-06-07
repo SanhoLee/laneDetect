@@ -17,6 +17,9 @@ Mat combine_threshold(Mat gray);
 Mat get_oneFromZeros_withinBound(Mat img, int boundary_thres[]);
 Mat normalize_HLS_L(Mat unWarp);
 Mat normalize_LAB_B(Mat unWarp);
+Mat make_zeros(Mat img);
+Mat make_ones(Mat img);
+Mat combine_both_img(Mat hls, Mat lab);
 
 int getMatrixVal(char calibration_matrix_file[], Mat *intrinsicRead, Mat *distCoeffsRead);
 
