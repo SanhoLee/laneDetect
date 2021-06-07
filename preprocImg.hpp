@@ -16,6 +16,7 @@ Mat grayTo_Dir(Mat gray, int dirKernelSize, double dir_threshold[]);
 Mat combine_threshold(Mat gray);
 Mat get_oneFromZeros_withinBound(Mat img, int boundary_thres[]);
 Mat normalize_HLS_L(Mat unWarp);
+Mat normalize_LAB_B(Mat unWarp);
 
 int getMatrixVal(char calibration_matrix_file[], Mat *intrinsicRead, Mat *distCoeffsRead);
 

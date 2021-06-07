@@ -32,20 +32,22 @@ Mat preprocImg(Mat img, Mat *invMatx)
     /* color space filtering, returned gray scale IMG. 
      HLS, L channel is the best for detecting white lane. 
      LAB, B channel is the best for detecting yellow lane. */
-    imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
-    imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
-    imshow("LAB img, B filterd.", imgLAB_B);
-    imshow("HLS img, L filterd.", imgHLS_L);
+    // imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
+    // imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
 
     // hlsCombined = combine_threshold(imgHLS_L);
     // labCombined = combine_threshold(imgLAB_B);
 
     // ToDos...
     // normalize img pixel for each color channel ?
-    imgHLS_L = normalize_HLS_L(imgUnwarp);
+    // imgHLS_L = normalize_HLS_L(imgUnwarp);
+    imgLAB_B = normalize_LAB_B(imgUnwarp);
 
-    // imshow("imgUnwarp", imgUnwarp);
-    // waitKey(0);
+    // imshow("LAB img, B filterd.", imgLAB_B);
+    // imshow("HLS img, L filterd.", imgHLS_L * 255);
+    imshow("LAB img, B filterd.", imgLAB_B * 255);
+    imshow("imgUnwarp", imgUnwarp);
+    waitKey(0);
 
     return img;
 };
@@ -56,6 +58,7 @@ Mat normalize_HLS_L(Mat unWarp)
     Mat imgHLS_L, imgNormal;
     double minVal, maxVal;
     Point minLoc, maxLoc;
+    int lowThres = 220;
 
     // get a single channel img(filtered one.)
     imgHLS_L = filterImg(unWarp, HLS_CHANNEL, L_FILTER);
@@ -66,11 +69,45 @@ Mat normalize_HLS_L(Mat unWarp)
     // make normalized img.
     imgNormal = (255 / maxVal) * imgHLS_L;
 
-    imshow("normalized", imgNormal);
-    imshow("origin", imgHLS_L);
-    waitKey(0);
+    // apply threshold for L channel.
+    Mat imgOut = Mat::zeros(imgNormal.rows, imgNormal.cols, imgNormal.type());
+    threshold(imgNormal, imgOut, lowThres, 1, THRESH_BINARY);
 
-    return unWarp;
+    return imgOut;
+}
+
+Mat normalize_LAB_B(Mat unWarp)
+{
+    /* normalizing B color channel pixel from LAB img. */
+    Mat imgLAB_B, imgNormal;
+    double minVal, maxVal;
+    Point minLoc, maxLoc;
+    int yellowCrit = 175;
+    int lowThres = 190;
+
+    // get a single channel img(filtered one.)
+    imgLAB_B = filterImg(unWarp, LAB_CHANNEL, B_FILTER_);
+
+    // get max, min value of the matrix.
+    minMaxLoc(imgLAB_B, &minVal, &maxVal, &minLoc, &maxLoc);
+
+    // (conditional) make normalized img.
+    // B channel means a range from blue to yellow.
+    // So, the bigger values, it becomes close to yellow color.(yellow lane)
+    if (maxVal > yellowCrit)
+    {
+        imgNormal = (255 / maxVal) * imgLAB_B;
+    }
+    else
+    {
+        imgNormal = imgLAB_B;
+    }
+
+    // apply threshold for L channel.
+    Mat imgOut = Mat::zeros(imgNormal.rows, imgNormal.cols, imgNormal.type());
+    threshold(imgNormal, imgOut, lowThres, 1, THRESH_BINARY);
+
+    return imgOut;
 }
 
 Mat combine_threshold(Mat gray)
