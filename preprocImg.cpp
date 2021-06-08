@@ -23,6 +23,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     Mat sobelMag, sobelDir;
     Mat hlsCombined, labCombined;
     Mat combineOut;
+    int rtnKey = 0;
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -30,24 +31,26 @@ Mat preprocImg(Mat img, Mat *invMatx)
     /* perspective transform(3d -> 2d(bird's view)) */
     imgUnwarp = unWarpingImg(imgUndistort, &invMatx, false);
 
-    /* color space filtering, returned gray scale IMG. 
-     HLS, L channel is the best for detecting white lane. 
-     LAB, B channel is the best for detecting yellow lane. */
-    // imgHLS_L = filterImg(imgUnwarp, HLS_CHANNEL, L_FILTER);
-    // imgLAB_B = filterImg(imgUnwarp, LAB_CHANNEL, B_FILTER_);
-
-    // hlsCombined = combine_threshold(imgHLS_L);
-    // labCombined = combine_threshold(imgLAB_B);
-
-    // normalize img pixel for each color channel
+    /* normalize img pixel for each color channel */
     imgHLS_L = normalize_HLS_L(imgUnwarp);
     imgLAB_B = normalize_LAB_B(imgUnwarp);
 
-    // combine hls and lab color pixel when either img pixel has 1 value or not.
+    /* combine hls and lab color pixel when either img pixel has 1 value or not. */
     combineOut = combine_both_img(imgHLS_L, imgLAB_B);
 
-    // ToDos...
-    // test with another pic frame.
+    // get histogram peak position(x coordinate)
+
+    // 무식한 방법.
+    for (int i = 0; i < combineOut.cols; i++)
+    {
+        Mat sub = combineOut.col(i);
+        for (int j = combineOut.rows / 2; j < combineOut.rows; j++)
+        {
+            // 한 컬럼에 대해서, 0 ~ combineOut.rows / 2 까지 픽셀 값 0 으로 초기화
+            // 행렬 사이즈가 한 컬럼만 있기 때문에, 이 행렬을 sum함수 사용하여, 전체 합계 계산
+            // row - x축, 합계 - y축 이 되는 그래프 그릴수 있는지 확인?
+        }
+    }
 
     // imshow("HLS img, L filterd.", imgHLS_L * 255);
     // imshow("LAB img, B filterd.", imgLAB_B * 255);
@@ -397,16 +400,21 @@ Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone)
     int width, height;
     vector<Point2f> srcRectCoord;
     vector<Point2f> dstRectCoord;
-    int dstX = 350;
+    int upX_diff = 180;
+    int upY_diff = 220;
+    int downX_diff = 370;
+    int downY_diff = 150;
+
+    int dstX = 450;
 
     width = imgUndistort.cols;
     height = imgUndistort.rows;
     // width : 1280, height : 720
 
-    Point p1s = Point2f(width / 2 - 150, height - 220);
-    Point p2s = Point2f(width / 2 + 150, height - 220);
-    Point p3s = Point2f(220, height - 50.0);
-    Point p4s = Point2f(width - 220.0, height - 50.0);
+    Point p1s = Point2f(width / 2 - upX_diff, height - upY_diff);
+    Point p2s = Point2f(width / 2 + upX_diff, height - upY_diff);
+    Point p3s = Point2f(downX_diff, height - downY_diff);
+    Point p4s = Point2f(width - downX_diff, height - downY_diff);
 
     Point p1d = Point2f(dstX, 0);
     Point p2d = Point2f(width - dstX, 0);

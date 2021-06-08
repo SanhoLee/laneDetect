@@ -13,8 +13,9 @@ int main(int argc, char **argv)
     Combined img :: best img after preprocessing from unwarping to color channel combinineg.
      */
 
-    img = imread("data/straight_lines1.jpg");
-    // img = imread("data/straight_lines2.jpg");
+    // img = imread("data/straight_lines1.jpg");
+    img = imread("data/straight_lines2.jpg");
+    // img = imread("data/bdd_data/b1d7b3ac-344d229e.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;
