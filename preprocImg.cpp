@@ -40,20 +40,85 @@ Mat preprocImg(Mat img, Mat *invMatx)
 
     // get histogram peak position(x coordinate)
 
-    // 무식한 방법.
-    for (int i = 0; i < combineOut.cols; i++)
+    // ranged img. get half down space.
+    Mat halfdown = combineOut(
+        Range(combineOut.rows / 2, combineOut.rows),
+        Range(0, combineOut.cols));
+
+    vector<int> sumArray;
+
+    // find sum value from each column pixel data.
+    for (int i = 0; i < halfdown.cols; i++)
     {
-        Mat sub = combineOut.col(i);
-        for (int j = combineOut.rows / 2; j < combineOut.rows; j++)
+        // make one column matrix.
+        Mat oneColumn = halfdown.col(i);
+
+        // sum all element and push back on a array.
+        int sumResult = sum(oneColumn)[0];
+        sumArray.push_back(sumResult);
+    }
+
+    int midPoint = sumArray.size() / 2;
+    int qtrPoint = midPoint / 2;
+    int leftx_base;
+    int rightx_base;
+
+    // This is for get subset of vector range.
+    vector<int>::const_iterator begin = sumArray.begin();
+    vector<int>::const_iterator last = sumArray.begin() + sumArray.size();
+
+    // full width : 1280px
+    // Get pixel data from 1/4 width ~ 2/4 width for sumArray matrix.
+    // position should be start with 'begin' iterator.
+    vector<int> left_qtr(begin + qtrPoint, begin + midPoint);
+    vector<int> right_qtr(begin + midPoint, begin + midPoint + qtrPoint);
+
+    // cout << "size of left_qtr : " << left_qtr.size() << endl;
+    // cout << "size of left_qtr : " << right_qtr.size() << endl;
+
+    for (int i = 0; i < left_qtr.size(); i++)
+    {
+        if (left_qtr[i] > 100)
         {
-            // 한 컬럼에 대해서, 0 ~ combineOut.rows / 2 까지 픽셀 값 0 으로 초기화
-            // 행렬 사이즈가 한 컬럼만 있기 때문에, 이 행렬을 sum함수 사용하여, 전체 합계 계산
-            // row - x축, 합계 - y축 이 되는 그래프 그릴수 있는지 확인?
+            cout << "L pos : " << qtrPoint + i << ", value : " << left_qtr[i] << endl;
         }
     }
 
+    for (int i = 0; i < right_qtr.size(); i++)
+    {
+        if (right_qtr[i] > 100)
+        {
+            cout << "R pos : " << midPoint + i << ", value : " << right_qtr[i] << endl;
+        }
+    }
+
+    cout << "\n"
+         << endl;
+
+    // max index and value from a certain array.
+    int leftMaxIndex = max_element(left_qtr.begin(), left_qtr.end()) - left_qtr.begin();
+    int leftMaxValue = *max_element(left_qtr.begin(), left_qtr.end());
+
+    int rightMaxIndex = max_element(right_qtr.begin(), right_qtr.end()) - right_qtr.begin();
+    int rightMaxValue = *max_element(right_qtr.begin(), right_qtr.end());
+
+    leftx_base = leftMaxIndex + qtrPoint;
+    rightx_base = rightMaxIndex + midPoint;
+
+    cout << "left max position : " << leftx_base << endl;
+    cout << "right max position : " << rightx_base << endl;
+
+    /* todos... 
+     peak값에 대한 위치를 두 개의 라인으로 분리시킨다.
+
+     1.각 컬럼의 픽셀 합 값을 어레이로 저장(위 for loop)
+     2.왼쪽, 오른쪽으로 라인의 피크값을 찾은 후, window search의 initial pos로 사용하기 위한 준비.
+
+    */
+
     // imshow("HLS img, L filterd.", imgHLS_L * 255);
     // imshow("LAB img, B filterd.", imgLAB_B * 255);
+    imshow("half down", halfdown * 255);
     imshow("combined OUT", combineOut * 255);
     imshow("imgUnwarp", imgUnwarp);
     waitKey(0);
@@ -402,10 +467,10 @@ Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone)
     vector<Point2f> dstRectCoord;
     int upX_diff = 180;
     int upY_diff = 220;
-    int downX_diff = 370;
-    int downY_diff = 150;
+    int downX_diff = 230;
+    int downY_diff = 80;
 
-    int dstX = 450;
+    int dstX = 350;
 
     width = imgUndistort.cols;
     height = imgUndistort.rows;
