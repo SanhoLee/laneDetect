@@ -17,13 +17,9 @@ char CALBR_FILE[256] = "cameraCalibrationData/out.txt";
 Mat preprocImg(Mat img, Mat *invMatx)
 {
     Mat imgUndistort, imgUnwarp;
-    Mat imgHLS_H, imgHLS_L, imgHLS_S;
-    Mat imgLAB_L, imgLAB_A, imgLAB_B;
-    Mat imgSobelX, imgSobelY;
-    Mat sobelMag, sobelDir;
-    Mat hlsCombined, labCombined;
+    Mat imgHLS_L;
+    Mat imgLAB_B;
     Mat combineOut;
-    int rtnKey = 0;
 
     /* undistort img. */
     imgUndistort = undistortingImg(img, true);
@@ -38,92 +34,10 @@ Mat preprocImg(Mat img, Mat *invMatx)
     /* combine hls and lab color pixel when either img pixel has 1 value or not. */
     combineOut = combine_both_img(imgHLS_L, imgLAB_B);
 
-    // get histogram peak position(x coordinate)
+    // imshow("combined OUT", combineOut * 255);
+    // imshow("imgUnwarp", imgUnwarp);
 
-    // ranged img. get half down space.
-    Mat halfdown = combineOut(
-        Range(combineOut.rows / 2, combineOut.rows),
-        Range(0, combineOut.cols));
-
-    vector<int> sumArray;
-
-    // find sum value from each column pixel data.
-    for (int i = 0; i < halfdown.cols; i++)
-    {
-        // make one column matrix.
-        Mat oneColumn = halfdown.col(i);
-
-        // sum all element and push back on a array.
-        int sumResult = sum(oneColumn)[0];
-        sumArray.push_back(sumResult);
-    }
-
-    int midPoint = sumArray.size() / 2;
-    int qtrPoint = midPoint / 2;
-    int leftx_base;
-    int rightx_base;
-
-    // This is for get subset of vector range.
-    vector<int>::const_iterator begin = sumArray.begin();
-    vector<int>::const_iterator last = sumArray.begin() + sumArray.size();
-
-    // full width : 1280px
-    // Get pixel data from 1/4 width ~ 2/4 width for sumArray matrix.
-    // position should be start with 'begin' iterator.
-    vector<int> left_qtr(begin + qtrPoint, begin + midPoint);
-    vector<int> right_qtr(begin + midPoint, begin + midPoint + qtrPoint);
-
-    // cout << "size of left_qtr : " << left_qtr.size() << endl;
-    // cout << "size of left_qtr : " << right_qtr.size() << endl;
-
-    for (int i = 0; i < left_qtr.size(); i++)
-    {
-        if (left_qtr[i] > 100)
-        {
-            cout << "L pos : " << qtrPoint + i << ", value : " << left_qtr[i] << endl;
-        }
-    }
-
-    for (int i = 0; i < right_qtr.size(); i++)
-    {
-        if (right_qtr[i] > 100)
-        {
-            cout << "R pos : " << midPoint + i << ", value : " << right_qtr[i] << endl;
-        }
-    }
-
-    cout << "\n"
-         << endl;
-
-    // max index and value from a certain array.
-    int leftMaxIndex = max_element(left_qtr.begin(), left_qtr.end()) - left_qtr.begin();
-    int leftMaxValue = *max_element(left_qtr.begin(), left_qtr.end());
-
-    int rightMaxIndex = max_element(right_qtr.begin(), right_qtr.end()) - right_qtr.begin();
-    int rightMaxValue = *max_element(right_qtr.begin(), right_qtr.end());
-
-    leftx_base = leftMaxIndex + qtrPoint;
-    rightx_base = rightMaxIndex + midPoint;
-
-    cout << "left max position : " << leftx_base << endl;
-    cout << "right max position : " << rightx_base << endl;
-
-    /* todos... 
-     peak값에 대한 위치를 두 개의 라인으로 분리시킨다.
-
-     1.각 컬럼의 픽셀 합 값을 어레이로 저장(위 for loop)
-     2.왼쪽, 오른쪽으로 라인의 피크값을 찾은 후, window search의 initial pos로 사용하기 위한 준비.
-
-    */
-
-    // imshow("HLS img, L filterd.", imgHLS_L * 255);
-    // imshow("LAB img, B filterd.", imgLAB_B * 255);
-    imshow("half down", halfdown * 255);
-    imshow("combined OUT", combineOut * 255);
-    imshow("imgUnwarp", imgUnwarp);
-    waitKey(0);
-
-    return img;
+    return combineOut;
 };
 
 Mat combine_both_img(Mat hls, Mat lab)

@@ -1,12 +1,15 @@
 #include <iostream>
 #include "CV_header.hpp"
 #include "preprocImg.hpp"
+#include "calcLaneImg.hpp"
 
 int main(int argc, char **argv)
 {
 
     Mat img, imgCombined;
     Mat invMatx;
+
+    vector<Point2f> roadBoundaryPtsArr;
 
     /* 
     pipeline     :: preprocessing img.
@@ -15,7 +18,6 @@ int main(int argc, char **argv)
 
     // img = imread("data/straight_lines1.jpg");
     img = imread("data/straight_lines2.jpg");
-    // img = imread("data/bdd_data/b1d7b3ac-344d229e.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;
@@ -23,6 +25,11 @@ int main(int argc, char **argv)
     }
 
     imgCombined = preprocImg(img, &invMatx);
+    roadBoundaryPtsArr = calcLaneImg(imgCombined);
+    // drawLane(roadBoundaryPtsArr);
+
+    imshow("imgConbined", imgCombined * 255);
+    waitKey(0);
 
     return 0;
 }

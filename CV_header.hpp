@@ -7,8 +7,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
-using namespace cv;
-
 #define toRadian() (CV_PI / 180)
 #define toDegree() (180 / CV_PI)
 
