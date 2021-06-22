@@ -21,10 +21,68 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     vector<int> sumArray = sumColElm(halfdown);
 
     /* 3. get left and right X coordinate for base position. */
-    int leftx_base = getLeftX_base(sumArray);
-    int rightx_base = getRightX_base(sumArray);
+    int leftX_base = getLeftX_base(sumArray);
+    int rightX_base = getRightX_base(sumArray);
 
     /* 4. window search squre data */
+    int window_height = imgCombined.rows / 10;
+    Mat nonZeroPos;
+    findNonZero(imgCombined, nonZeroPos);
+    // -> nonZeroPos has non-zero pixel location info.
+
+    // create window for detecting line.
+    // define variables...
+    int win_yHigh;
+    int win_yLow;
+
+    int win_xLeft_low;
+    int win_xLeft_high;
+
+    int win_xRight_low;
+    int win_xRight_high;
+
+    int margin = 80;
+    int leftX_current = leftX_base;
+    int rightX_current = rightX_base;
+
+    // define each window box...
+    // 여기서 high, low는 축방향 크고 작음이 아니라, 픽셀 인덱스 값의 크고 작음을 의미한다. 그렇기 때문에 y high 이면 화면상 아래 방향일수록 high 이며, x high 일 경우는 화면상에서 오른쪽에 있을 수록 high 값을 나타낸다.
+
+    win_yHigh = imgCombined.rows - (0) * window_height;
+    win_yLow = imgCombined.rows - (0 + 1) * window_height;
+
+    win_xLeft_low = leftX_current - margin;
+    win_xLeft_high = leftX_current + margin;
+    win_xRight_low = rightX_current - margin;
+    win_xRight_high = rightX_current + margin;
+
+    // 변수에 할당 후 프린트 하면, 정상적으로 값이 출력된다.
+    int temp = imgCombined.at<uint8_t>(nonZeroPos.at<Point>(10910));
+    cout << temp << endl;
+
+    // size : colSize x rowSize [1 x 100xx]
+
+    vector<int> leftWindowPoint_X_idx;
+    vector<int> leftWindowPoint_Y_idx;
+
+    for (int i = 0; i < nonZeroPos.rows; i++)
+    {
+        int nonZeroX = nonZeroPos.at<Point>(i).x;
+        int nonZeroY = nonZeroPos.at<Point>(i).y;
+        Point onePt = {0, 0};
+        onePt = nonZeroPos.at<Point>(i);
+
+        // When non-zero position is on spcified Window Area.
+        if (nonZeroX >= win_xLeft_low &&
+            nonZeroX < win_xLeft_high &&
+            nonZeroY >= win_yLow &&
+            nonZeroY < win_yHigh)
+        {
+            leftWindowPoint_X_idx.push_back(onePt.x);
+            leftWindowPoint_Y_idx.push_back(onePt.y);
+        }
+    }
+
     /* 5. coefficient for the 2nd polynomial equation */
     /* 6. array for x, y direction. */
 
