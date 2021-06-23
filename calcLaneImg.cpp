@@ -25,7 +25,7 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int rightX_base = getRightX_base(sumArray);
 
     /* 4. window search squre data */
-    int window_height = imgCombined.rows / 10;
+    int window_height = imgCombined.rows / 20;
     Mat nonZeroPos;
     findNonZero(imgCombined, nonZeroPos);
     // -> nonZeroPos has non-zero pixel location info.
@@ -42,10 +42,14 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int win_xRight_high;
 
     int margin = 80;
+    int minNumPix = 40;
     int leftX_current = leftX_base;
     int rightX_current = rightX_base;
 
     // define each window box...
+    // save on Vector variable.
+    vector<vector<Rect>> rectWindowInfo;
+
     // 여기서 high, low는 축방향 크고 작음이 아니라, 픽셀 인덱스 값의 크고 작음을 의미한다. 그렇기 때문에 y high 이면 화면상 아래 방향일수록 high 이며, x high 일 경우는 화면상에서 오른쪽에 있을 수록 high 값을 나타낸다.
 
     win_yHigh = imgCombined.rows - (0) * window_height;
@@ -56,21 +60,36 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     win_xRight_low = rightX_current - margin;
     win_xRight_high = rightX_current + margin;
 
+    // define current window by Rect class.
+    // syntax --> Rect(x,y,width, height)
+    Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
+    Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
+    rectWindowInfo.push_back({curLeftWindow, curRightWindow});
+
+    cout << "left rect x : " << rectWindowInfo[0][0].y << endl;
+    cout << "right rect x : " << rectWindowInfo[0][1].y << endl;
+
+    cout << "full height : " << imgCombined.rows << endl;
+    cout << "full width : " << imgCombined.cols << endl;
+
     // 변수에 할당 후 프린트 하면, 정상적으로 값이 출력된다.
-    int temp = imgCombined.at<uint8_t>(nonZeroPos.at<Point>(10910));
-    cout << temp << endl;
+    // int temp = imgCombined.at<uint8_t>(nonZeroPos.at<Point>(10910));
+    // cout << temp << endl;
 
     // size : colSize x rowSize [1 x 100xx]
 
-    vector<int> leftWindowPoint_X_idx;
-    vector<int> leftWindowPoint_Y_idx;
+    vector<int> leftWindowPoint_IDX_X;
+    vector<int> rightWindowPoint_IDX_X;
 
+    // Put a certain Point that is on the window boundary.
     for (int i = 0; i < nonZeroPos.rows; i++)
     {
         int nonZeroX = nonZeroPos.at<Point>(i).x;
         int nonZeroY = nonZeroPos.at<Point>(i).y;
+
+        // initializing Point variable.
         Point onePt = {0, 0};
-        onePt = nonZeroPos.at<Point>(i);
+        onePt = {nonZeroX, nonZeroY};
 
         // When non-zero position is on spcified Window Area.
         if (nonZeroX >= win_xLeft_low &&
@@ -78,10 +97,34 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
             nonZeroY >= win_yLow &&
             nonZeroY < win_yHigh)
         {
-            leftWindowPoint_X_idx.push_back(onePt.x);
-            leftWindowPoint_Y_idx.push_back(onePt.y);
+            leftWindowPoint_IDX_X.push_back(onePt.x);
         }
     }
+
+    // 160 * (720/10) = 11520 px 중, 386 개의 px에서 non-zero 데이터임을 확인했다.
+    cout << "leftWindowPoint_IDX_X size :: " << leftWindowPoint_IDX_X.size() << endl;
+
+    vector<int> temp = {1, 4, 6};
+    int sum = 0;
+    int mean = 0;
+    // if found the number of window pixel is bigger than min pixel, recenter next window pos.
+    if (leftWindowPoint_IDX_X.size() > minNumPix)
+    {
+        // get mean value from vector array.
+
+        // 1. sum
+        for (int i = 0; i < temp.size(); i++)
+        {
+            sum = sum + temp[i];
+        }
+        cout << "sum value :: " << sum << endl;
+
+        // 2. divide by the size of vector.
+        mean = (int)sum / temp.size();
+        cout << "mean value :: " << mean << endl;
+    }
+
+    //
 
     /* 5. coefficient for the 2nd polynomial equation */
     /* 6. array for x, y direction. */
