@@ -1,5 +1,6 @@
 #include <iostream>
 #include "calcLaneImg.hpp"
+#include "common.hpp"
 
 vector<Point2f> calcLaneImg(Mat imgCombined)
 {
@@ -25,7 +26,7 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int rightX_base = getRightX_base(sumArray);
 
     /* 4. window search squre data */
-    int window_height = imgCombined.rows / 20;
+    int window_height = imgCombined.rows / 10;
     Mat nonZeroPos;
     findNonZero(imgCombined, nonZeroPos);
     // -> nonZeroPos has non-zero pixel location info.
@@ -49,8 +50,6 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     // define each window box...
     // save on Vector variable.
     vector<vector<Rect>> rectWindowInfo;
-
-    // 여기서 high, low는 축방향 크고 작음이 아니라, 픽셀 인덱스 값의 크고 작음을 의미한다. 그렇기 때문에 y high 이면 화면상 아래 방향일수록 high 이며, x high 일 경우는 화면상에서 오른쪽에 있을 수록 high 값을 나타낸다.
 
     win_yHigh = imgCombined.rows - (0) * window_height;
     win_yLow = imgCombined.rows - (0 + 1) * window_height;
@@ -76,52 +75,23 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     // int temp = imgCombined.at<uint8_t>(nonZeroPos.at<Point>(10910));
     // cout << temp << endl;
 
-    // size : colSize x rowSize [1 x 100xx]
-
-    vector<int> leftWindowPoint_IDX_X;
+    // left, right flag 던져서 하나의 함수로 대응?
+    vector<int> leftWindowPoint_IDX_X = getIndexArray_LeftWindow(nonZeroPos, curLeftWindow);
     vector<int> rightWindowPoint_IDX_X;
 
     // Put a certain Point that is on the window boundary.
-    for (int i = 0; i < nonZeroPos.rows; i++)
-    {
-        int nonZeroX = nonZeroPos.at<Point>(i).x;
-        int nonZeroY = nonZeroPos.at<Point>(i).y;
-
-        // initializing Point variable.
-        Point onePt = {0, 0};
-        onePt = {nonZeroX, nonZeroY};
-
-        // When non-zero position is on spcified Window Area.
-        if (nonZeroX >= win_xLeft_low &&
-            nonZeroX < win_xLeft_high &&
-            nonZeroY >= win_yLow &&
-            nonZeroY < win_yHigh)
-        {
-            leftWindowPoint_IDX_X.push_back(onePt.x);
-        }
-    }
 
     // 160 * (720/10) = 11520 px 중, 386 개의 px에서 non-zero 데이터임을 확인했다.
     cout << "leftWindowPoint_IDX_X size :: " << leftWindowPoint_IDX_X.size() << endl;
 
-    vector<int> temp = {1, 4, 6};
-    int sum = 0;
     int mean = 0;
     // if found the number of window pixel is bigger than min pixel, recenter next window pos.
     if (leftWindowPoint_IDX_X.size() > minNumPix)
     {
         // get mean value from vector array.
-
-        // 1. sum
-        for (int i = 0; i < temp.size(); i++)
-        {
-            sum = sum + temp[i];
-        }
-        cout << "sum value :: " << sum << endl;
-
-        // 2. divide by the size of vector.
-        mean = (int)sum / temp.size();
-        cout << "mean value :: " << mean << endl;
+        mean = mean_vectorArray(leftWindowPoint_IDX_X);
+        cout << "before left center value : " << leftX_current << endl;
+        cout << "mean value : " << mean << endl;
     }
 
     //
@@ -218,4 +188,51 @@ int getRightX_base(vector<int> sumArray)
     rightX_base = rightMaxIndex + midPoint;
 
     return rightX_base;
+}
+
+int mean_vectorArray(vector<int> target_vector)
+{
+    int sum = 0;
+    int mean = 0;
+
+    // 1. sum
+    for (int i = 0; i < target_vector.size(); i++)
+    {
+        sum = sum + target_vector[i];
+    }
+
+    // 2. divide by the size of vector.
+    mean = (int)sum / target_vector.size();
+
+    return mean;
+}
+
+vector<int> getIndexArray_LeftWindow(Mat nonZeroPos, Rect windowBox)
+{
+    vector<int> leftWindowPoint_IDX_X;
+
+    // define boundary window.
+    int xLow = windowBox.x;
+    int xHigh = xLow + windowBox.width;
+    int yLow = windowBox.y;
+    int yHigh = yLow + windowBox.height;
+
+    // Put a certain Point that is on the window boundary.
+    for (int i = 0; i < nonZeroPos.rows; i++)
+    {
+        int nonZeroX = nonZeroPos.at<Point>(i).x;
+        int nonZeroY = nonZeroPos.at<Point>(i).y;
+
+        // initializing Point variable.
+        Point onePt = {0, 0};
+        onePt = {nonZeroX, nonZeroY};
+
+        // When non-zero position is on spcified Window Area.
+        if (nonZeroX >= xLow && nonZeroX < xHigh && nonZeroY >= yLow && nonZeroY < yHigh)
+        {
+            leftWindowPoint_IDX_X.push_back(onePt.x);
+        }
+    }
+
+    return leftWindowPoint_IDX_X;
 }

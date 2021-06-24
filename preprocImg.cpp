@@ -1,16 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "preprocImg.hpp"
-#define HLS_CHANNEL 0
-#define LAB_CHANNEL 1
-
-#define H_FILTER 0
-#define L_FILTER 1
-#define S_FILTER 2
-
-#define L_FILTER_ 0
-#define A_FILTER_ 1
-#define B_FILTER_ 2
+#include "common.hpp"
 
 char CALBR_FILE[256] = "cameraCalibrationData/out.txt";
 
