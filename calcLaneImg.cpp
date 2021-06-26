@@ -2,6 +2,9 @@
 #include "calcLaneImg.hpp"
 #include "common.hpp"
 
+// minimum pixel for left and right window search.
+int minNumPix = 40;
+
 vector<Point2f> calcLaneImg(Mat imgCombined)
 {
     /*  
@@ -26,10 +29,15 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int rightX_base = getRightX_base(sumArray);
 
     /* 4. window search squre data */
-    int window_height = imgCombined.rows / 10;
+    int numWindow = 10;
+    int window_height = imgCombined.rows / numWindow;
     Mat nonZeroPos;
     findNonZero(imgCombined, nonZeroPos);
     // -> nonZeroPos has non-zero pixel location info.
+
+    // container for each side window pixel
+    vector<vector<int>> leftLanePixelContainer;
+    vector<vector<int>> rightLanePixelContainer;
 
     // create window for detecting line.
     // define variables...
@@ -37,64 +45,47 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int win_yLow;
 
     int win_xLeft_low;
-    int win_xLeft_high;
-
     int win_xRight_low;
-    int win_xRight_high;
 
     int margin = 80;
-    int minNumPix = 40;
     int leftX_current = leftX_base;
     int rightX_current = rightX_base;
 
     // define each window box...
     // save on Vector variable.
     vector<vector<Rect>> rectWindowInfo;
-
-    win_yHigh = imgCombined.rows - (0) * window_height;
-    win_yLow = imgCombined.rows - (0 + 1) * window_height;
-
-    win_xLeft_low = leftX_current - margin;
-    win_xLeft_high = leftX_current + margin;
-    win_xRight_low = rightX_current - margin;
-    win_xRight_high = rightX_current + margin;
-
-    // define current window by Rect class.
-    // syntax --> Rect(x,y,width, height)
-    Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
-    Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
-    rectWindowInfo.push_back({curLeftWindow, curRightWindow});
-
-    cout << "left rect x : " << rectWindowInfo[0][0].y << endl;
-    cout << "right rect x : " << rectWindowInfo[0][1].y << endl;
-
-    cout << "full height : " << imgCombined.rows << endl;
-    cout << "full width : " << imgCombined.cols << endl;
-
-    // 변수에 할당 후 프린트 하면, 정상적으로 값이 출력된다.
-    // int temp = imgCombined.at<uint8_t>(nonZeroPos.at<Point>(10910));
-    // cout << temp << endl;
-
-    // left, right flag 던져서 하나의 함수로 대응?
-    vector<int> leftWindowPoint_IDX_X = getIndexArray_LeftWindow(nonZeroPos, curLeftWindow);
-    vector<int> rightWindowPoint_IDX_X;
-
-    // Put a certain Point that is on the window boundary.
-
-    // 160 * (720/10) = 11520 px 중, 386 개의 px에서 non-zero 데이터임을 확인했다.
-    cout << "leftWindowPoint_IDX_X size :: " << leftWindowPoint_IDX_X.size() << endl;
-
-    int mean = 0;
-    // if found the number of window pixel is bigger than min pixel, recenter next window pos.
-    if (leftWindowPoint_IDX_X.size() > minNumPix)
+    for (int i = 0; i < numWindow; i++)
     {
-        // get mean value from vector array.
-        mean = mean_vectorArray(leftWindowPoint_IDX_X);
-        cout << "before left center value : " << leftX_current << endl;
-        cout << "mean value : " << mean << endl;
+        win_yHigh = imgCombined.rows - (i)*window_height;
+        win_yLow = imgCombined.rows - (i + 1) * window_height;
+        win_xLeft_low = leftX_current - margin;
+        win_xRight_low = rightX_current - margin;
+
+        // define current window by Rect class.
+        // syntax --> Rect(x,y,width, height)
+        // funtion 1.
+        // (make array.)1. Rect object info for specific window.
+        Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
+        Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
+        rectWindowInfo.push_back({curLeftWindow, curRightWindow});
+
+        // get index for non-zero elements on each side of windows.
+        // funtion 2.
+        // (make array.)2. found pixel index element for specific window.
+        vector<int> leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
+        vector<int> rightWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curRightWindow);
+        leftLanePixelContainer.push_back(leftWindowPoint_IDX_X);
+        rightLanePixelContainer.push_back(rightWindowPoint_IDX_X);
+
+        /* Updating if found the number of window pixel is bigger than min pixel, 
+        re-center next window pos.    
+        updating element : leftX_current, rightX_current
+        */
+        reCenterCurrentPos(leftWindowPoint_IDX_X, &leftX_current);
+        reCenterCurrentPos(rightWindowPoint_IDX_X, &rightX_current);
     }
 
-    //
+    // return array --> rectWindowInfo, leftLanePixelContainer, rightLanePixelContainer
 
     /* 5. coefficient for the 2nd polynomial equation */
     /* 6. array for x, y direction. */
@@ -207,9 +198,10 @@ int mean_vectorArray(vector<int> target_vector)
     return mean;
 }
 
-vector<int> getIndexArray_LeftWindow(Mat nonZeroPos, Rect windowBox)
+vector<int> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox)
 {
-    vector<int> leftWindowPoint_IDX_X;
+    // commonly use for left and right side winodw.
+    vector<int> windowPoint_IDX_X;
 
     // define boundary window.
     int xLow = windowBox.x;
@@ -230,9 +222,31 @@ vector<int> getIndexArray_LeftWindow(Mat nonZeroPos, Rect windowBox)
         // When non-zero position is on spcified Window Area.
         if (nonZeroX >= xLow && nonZeroX < xHigh && nonZeroY >= yLow && nonZeroY < yHigh)
         {
-            leftWindowPoint_IDX_X.push_back(onePt.x);
+            windowPoint_IDX_X.push_back(onePt.x);
         }
     }
 
-    return leftWindowPoint_IDX_X;
+    return windowPoint_IDX_X;
+}
+
+void reCenterCurrentPos(vector<int> pntXIndexArray, int *currentXPos)
+{
+    /*
+    parameter:
+        INPUT
+            pntXIndexArray  : index array for x-coordinate from non-zero pixel array.
+        I/O
+            currentXPos     : window center position for x axis.
+    */
+
+    // check the length of pointIndexArray is bigger than minNumPix or not.
+    if (pntXIndexArray.size() > minNumPix)
+    {
+        // re-center window center x coordinates with mean values for the array.
+        *currentXPos = mean_vectorArray(pntXIndexArray);
+    }
+    else
+    {
+        // no need to process
+    }
 }
