@@ -51,6 +51,11 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int leftX_current = leftX_base;
     int rightX_current = rightX_base;
 
+    cout << "full width : " << imgCombined.cols << endl;
+    cout << "full height : " << imgCombined.rows << endl;
+    cout << "leftXbase : " << leftX_base << endl;
+    cout << "rightXbase : " << rightX_base << endl;
+
     // define each window box...
     // save on Vector variable.
     vector<vector<Rect>> rectWindowInfo;
@@ -72,7 +77,8 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
         // get index for non-zero elements on each side of windows.
         // funtion 2.
         // (make array.)2. found pixel index element for specific window.
-        vector<int> leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
+        vector<int>
+            leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
         vector<int> rightWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curRightWindow);
         leftLanePixelContainer.push_back(leftWindowPoint_IDX_X);
         rightLanePixelContainer.push_back(rightWindowPoint_IDX_X);
@@ -84,6 +90,18 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
         reCenterCurrentPos(leftWindowPoint_IDX_X, &leftX_current);
         reCenterCurrentPos(rightWindowPoint_IDX_X, &rightX_current);
     }
+
+    Mat test(imgCombined.rows, imgCombined.cols, CV_8UC3, Scalar(255, 255, 255));
+    for (int i = 0; i < numWindow; i++)
+    {
+        // left window
+        rectangle(test, rectWindowInfo[i][0], Scalar(0, 0, 255), 5, LINE_AA);
+        // right window
+        rectangle(test, rectWindowInfo[i][1], Scalar(0, 0, 255), 5, LINE_AA);
+    }
+
+    imshow("test", test);
+    waitKey(0);
 
     // return array --> rectWindowInfo, leftLanePixelContainer, rightLanePixelContainer
 
