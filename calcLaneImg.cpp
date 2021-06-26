@@ -18,6 +18,12 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     */
     vector<Point2f> laneBoundary_coord;
 
+    // rectangle window info for each side of lane.
+    // container for each side window pixel
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<int>> leftLanePixelContainer;
+    vector<vector<int>> rightLanePixelContainer;
+
     /* 1. get half down space. */
     Mat halfdown = halfDownImg(imgCombined);
 
@@ -29,81 +35,12 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     int rightX_base = getRightX_base(sumArray);
 
     /* 4. window search squre data */
-    int numWindow = 10;
-    int window_height = imgCombined.rows / numWindow;
-    Mat nonZeroPos;
-    findNonZero(imgCombined, nonZeroPos);
-    // -> nonZeroPos has non-zero pixel location info.
-
-    // container for each side window pixel
-    vector<vector<int>> leftLanePixelContainer;
-    vector<vector<int>> rightLanePixelContainer;
-
-    // create window for detecting line.
-    // define variables...
-    int win_yHigh;
-    int win_yLow;
-
-    int win_xLeft_low;
-    int win_xRight_low;
-
-    int margin = 80;
-    int leftX_current = leftX_base;
-    int rightX_current = rightX_base;
-
-    cout << "full width : " << imgCombined.cols << endl;
-    cout << "full height : " << imgCombined.rows << endl;
-    cout << "leftXbase : " << leftX_base << endl;
-    cout << "rightXbase : " << rightX_base << endl;
-
-    // define each window box...
-    // save on Vector variable.
-    vector<vector<Rect>> rectWindowInfo;
-    for (int i = 0; i < numWindow; i++)
-    {
-        win_yHigh = imgCombined.rows - (i)*window_height;
-        win_yLow = imgCombined.rows - (i + 1) * window_height;
-        win_xLeft_low = leftX_current - margin;
-        win_xRight_low = rightX_current - margin;
-
-        // define current window by Rect class.
-        // syntax --> Rect(x,y,width, height)
-        // funtion 1.
-        // (make array.)1. Rect object info for specific window.
-        Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
-        Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
-        rectWindowInfo.push_back({curLeftWindow, curRightWindow});
-
-        // get index for non-zero elements on each side of windows.
-        // funtion 2.
-        // (make array.)2. found pixel index element for specific window.
-        vector<int>
-            leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
-        vector<int> rightWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curRightWindow);
-        leftLanePixelContainer.push_back(leftWindowPoint_IDX_X);
-        rightLanePixelContainer.push_back(rightWindowPoint_IDX_X);
-
-        /* Updating if found the number of window pixel is bigger than min pixel, 
-        re-center next window pos.    
-        updating element : leftX_current, rightX_current
-        */
-        reCenterCurrentPos(leftWindowPoint_IDX_X, &leftX_current);
-        reCenterCurrentPos(rightWindowPoint_IDX_X, &rightX_current);
-    }
-
-    Mat test(imgCombined.rows, imgCombined.cols, CV_8UC3, Scalar(255, 255, 255));
-    for (int i = 0; i < numWindow; i++)
-    {
-        // left window
-        rectangle(test, rectWindowInfo[i][0], Scalar(0, 0, 255), 5, LINE_AA);
-        // right window
-        rectangle(test, rectWindowInfo[i][1], Scalar(0, 0, 255), 5, LINE_AA);
-    }
-
-    imshow("test", test);
-    waitKey(0);
-
-    // return array --> rectWindowInfo, leftLanePixelContainer, rightLanePixelContainer
+    winSearchImg(imgCombined,
+                 20,
+                 {leftX_base, rightX_base},
+                 rectWindowInfo,
+                 leftLanePixelContainer,
+                 rightLanePixelContainer);
 
     /* 5. coefficient for the 2nd polynomial equation */
     /* 6. array for x, y direction. */
@@ -267,4 +204,75 @@ void reCenterCurrentPos(vector<int> pntXIndexArray, int *currentXPos)
     {
         // no need to process
     }
+}
+
+void winSearchImg(Mat preprocess,
+                  int numWindow,
+                  vector<int> xBase,
+                  vector<vector<Rect>> rectWindowInfo,
+                  vector<vector<int>> leftLanePixelContainer,
+                  vector<vector<int>> rightLanePixelContainer)
+{
+    // input        --> Mat preprocess, int numWindow, vector<int> xBase
+    // return array --> rectWindowInfo, leftLanePixelContainer, rightLanePixelContainer
+
+    Mat nonZeroPos;
+    int window_height = preprocess.rows / numWindow;
+
+    // nonZeroPos has non-zero pixel location info.
+    findNonZero(preprocess, nonZeroPos);
+
+    // create window for detecting line.
+    // define variables...
+    int win_yHigh;
+    int win_yLow;
+    int win_xLeft_low;
+    int win_xRight_low;
+
+    int leftX_base = xBase[0];
+    int rightX_base = xBase[1];
+
+    int margin = 80;
+    int leftX_current = leftX_base;
+    int rightX_current = rightX_base;
+
+    // define each window box...
+    // save on Vector variable.
+    for (int i = 0; i < numWindow; i++)
+    {
+        win_yHigh = preprocess.rows - (i)*window_height;
+        win_yLow = preprocess.rows - (i + 1) * window_height;
+        win_xLeft_low = leftX_current - margin;
+        win_xRight_low = rightX_current - margin;
+
+        // (make array.)1. Rect object info for specific window.
+        Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
+        Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
+        rectWindowInfo.push_back({curLeftWindow, curRightWindow});
+
+        // (make array.)2. found pixel index element for specific window.
+        vector<int>
+            leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
+        vector<int> rightWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curRightWindow);
+        leftLanePixelContainer.push_back(leftWindowPoint_IDX_X);
+        rightLanePixelContainer.push_back(rightWindowPoint_IDX_X);
+
+        /* 3. Updating if found the number of window pixel is bigger than min pixel, 
+        re-center next window pos.    
+        updating element : leftX_current, rightX_current
+        */
+        reCenterCurrentPos(leftWindowPoint_IDX_X, &leftX_current);
+        reCenterCurrentPos(rightWindowPoint_IDX_X, &rightX_current);
+    }
+
+    Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
+
+    for (int i = 0; i < numWindow; i++)
+    {
+        rectangle(test, rectWindowInfo[i][0], Scalar(255, 0, 0), 3, LINE_AA);
+        rectangle(test, rectWindowInfo[i][1], Scalar(0, 0, 255), 3, LINE_AA);
+    }
+
+    imshow("test", test);
+    waitKey(0);
 }
