@@ -4,6 +4,7 @@
 
 // minimum pixel for left and right window search.
 int minNumPix = 40;
+int numWindow = 10;
 
 vector<Point2f> calcLaneImg(Mat imgCombined)
 {
@@ -21,8 +22,8 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     // rectangle window info for each side of lane.
     // container for each side window pixel
     vector<vector<Rect>> rectWindowInfo;
-    vector<vector<int>> leftLanePixelContainer;
-    vector<vector<int>> rightLanePixelContainer;
+    vector<vector<int>> leftXPixelContainer;
+    vector<vector<int>> rightXPixelContainer;
 
     /* 1. get half down space. */
     Mat halfdown = halfDownImg(imgCombined);
@@ -36,13 +37,20 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
 
     /* 4. window search squre data */
     winSearchImg(imgCombined,
-                 20,
+                 numWindow,
                  {leftX_base, rightX_base},
-                 rectWindowInfo,
-                 leftLanePixelContainer,
-                 rightLanePixelContainer);
+                 &rectWindowInfo,
+                 &leftXPixelContainer,
+                 &rightXPixelContainer);
 
     /* 5. coefficient for the 2nd polynomial equation */
+
+    // concatenating two dimension vector -> one dimension vector.
+    vector<int> leftXPixelPos_OneDim = dimDownFrom2To1(leftXPixelContainer);
+    vector<int> rightXPixelPos_OneDim = dimDownFrom2To1(rightXPixelContainer);
+
+    // (todos..)From non-zero Mat, get x and y coordinate for preprocessed pixel position.
+
     /* 6. array for x, y direction. */
 
     // squreInfo(vector) : Including left and right Rectange Info. structure? just vector?
@@ -209,12 +217,12 @@ void reCenterCurrentPos(vector<int> pntXIndexArray, int *currentXPos)
 void winSearchImg(Mat preprocess,
                   int numWindow,
                   vector<int> xBase,
-                  vector<vector<Rect>> rectWindowInfo,
-                  vector<vector<int>> leftLanePixelContainer,
-                  vector<vector<int>> rightLanePixelContainer)
+                  vector<vector<Rect>> *rectWindowInfo,
+                  vector<vector<int>> *leftXPixelContainer,
+                  vector<vector<int>> *rightXPixelContainer)
 {
     // input        --> Mat preprocess, int numWindow, vector<int> xBase
-    // return array --> rectWindowInfo, leftLanePixelContainer, rightLanePixelContainer
+    // return array --> rectWindowInfo, leftXPixelContainer, rightXPixelContainer
 
     Mat nonZeroPos;
     int window_height = preprocess.rows / numWindow;
@@ -248,14 +256,14 @@ void winSearchImg(Mat preprocess,
         // (make array.)1. Rect object info for specific window.
         Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
         Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
-        rectWindowInfo.push_back({curLeftWindow, curRightWindow});
+        rectWindowInfo->push_back({curLeftWindow, curRightWindow});
 
         // (make array.)2. found pixel index element for specific window.
         vector<int>
             leftWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
         vector<int> rightWindowPoint_IDX_X = getIndexArray_onWindow(nonZeroPos, curRightWindow);
-        leftLanePixelContainer.push_back(leftWindowPoint_IDX_X);
-        rightLanePixelContainer.push_back(rightWindowPoint_IDX_X);
+        leftXPixelContainer->push_back(leftWindowPoint_IDX_X);
+        rightXPixelContainer->push_back(rightWindowPoint_IDX_X);
 
         /* 3. Updating if found the number of window pixel is bigger than min pixel, 
         re-center next window pos.    
@@ -265,14 +273,26 @@ void winSearchImg(Mat preprocess,
         reCenterCurrentPos(rightWindowPoint_IDX_X, &rightX_current);
     }
 
-    Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
+    // Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
 
-    for (int i = 0; i < numWindow; i++)
+    // for (int i = 0; i < numWindow; i++)
+    // {
+    //     rectangle(test, rectWindowInfo[i][0], Scalar(255, 0, 0), 3, LINE_AA);
+    //     rectangle(test, rectWindowInfo[i][1], Scalar(0, 0, 255), 3, LINE_AA);
+    // }
+
+    // imshow("test", test);
+    // waitKey(0);
+}
+
+vector<int> dimDownFrom2To1(vector<vector<int>> twoDimVector)
+{
+    vector<int> oneDimVector(twoDimVector[0]);
+
+    for (int i = 0; i < twoDimVector.size() - 1; i++)
     {
-        rectangle(test, rectWindowInfo[i][0], Scalar(255, 0, 0), 3, LINE_AA);
-        rectangle(test, rectWindowInfo[i][1], Scalar(0, 0, 255), 3, LINE_AA);
+        oneDimVector.insert(oneDimVector.end(), twoDimVector[i + 1].begin(), twoDimVector[i + 1].end());
     }
 
-    imshow("test", test);
-    waitKey(0);
+    return oneDimVector;
 }

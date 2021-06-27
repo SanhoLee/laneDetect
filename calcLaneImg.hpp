@@ -11,6 +11,7 @@ Mat halfDownImg(Mat original);
 vector<Point2f> calcLaneImg(Mat imgCombined);
 vector<int> sumColElm(Mat img_binary);
 vector<int> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox);
+vector<int> dimDownFrom2To1(vector<vector<int>> twoDimVector);
 
 int getLeftX_base(vector<int> sumArray);
 int getRightX_base(vector<int> sumArray);
@@ -20,8 +21,8 @@ void reCenterCurrentPos(vector<int> pntXIndexArray, int *currentXPos);
 void winSearchImg(Mat preprocess,
                   int numWindow,
                   vector<int> xBase,
-                  vector<vector<Rect>> rectWindowInfo,
-                  vector<vector<int>> leftLanePixelContainer,
-                  vector<vector<int>> rightLanePixelContainer);
+                  vector<vector<Rect>> *rectWindowInfo,
+                  vector<vector<int>> *leftLanePixelContainer,
+                  vector<vector<int>> *rightLanePixelContainer);
 
 #endif
