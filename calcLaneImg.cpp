@@ -1,4 +1,5 @@
 #include <iostream>
+#include <numeric>
 #include "calcLaneImg.hpp"
 #include "common.hpp"
 
@@ -46,10 +47,17 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
     /* 5. coefficient for the 2nd polynomial equation */
 
     // concatenating two dimension vector -> one dimension vector.
-    vector<Point> leftXPixelPos_OneDim = dimDownFrom2To1(leftPixelContainer);
-    vector<Point> rightXPixelPos_OneDim = dimDownFrom2To1(rightPixelContainer);
+    vector<Point> leftPixelPosXY_OneDim = dimDownFrom2To1(leftPixelContainer);
+    vector<Point> rightPixelPosXY_OneDim = dimDownFrom2To1(rightPixelContainer);
 
     // (todos..)From non-zero Mat, get x and y coordinate for preprocessed pixel position.
+
+    vector<double> xCoord = {0.0, 3.0, 5.0, 7.0, 10.0};
+    vector<double> yCoord = {10, 11.6, 24.1, 55.7, 103.9};
+
+    vector<double> polyCoeffs;
+
+    polyCoeffs = polyFit_cpp(xCoord, yCoord, 2);
 
     /* 6. array for x, y direction. */
 
@@ -275,14 +283,14 @@ void winSearchImg(Mat preprocess,
 
     Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
 
-    for (int i = 0; i < numWindow; i++)
-    {
-        rectangle(test, rectWindowInfo[0][i][0], Scalar(255, 0, 0), 3, LINE_AA);
-        rectangle(test, rectWindowInfo[0][i][1], Scalar(0, 0, 255), 3, LINE_AA);
-    }
+    // for (int i = 0; i < numWindow; i++)
+    // {
+    //     rectangle(test, rectWindowInfo[0][i][0], Scalar(255, 0, 0), 3, LINE_AA);
+    //     rectangle(test, rectWindowInfo[0][i][1], Scalar(0, 0, 255), 3, LINE_AA);
+    // }
 
-    imshow("test", test);
-    waitKey(0);
+    // imshow("test", test);
+    // waitKey(0);
 }
 
 vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector)
@@ -295,4 +303,72 @@ vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector)
     }
 
     return oneDimVector;
+}
+
+vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int polyOrder)
+{
+    /* return : coefficients of the polynomial equation.
+
+     first. make funtion for 2nd-order polynomial equation.
+     second. normalizing function.
+
+     */
+
+    // initializing a matrix.
+    vector<double> a_matrix;
+    double a0 = 0.0, a1 = 0.0, a2 = 0.0;
+
+    // Calculating row 1
+    double N = (double)xCoord.size();
+    double sigX = sumVec(xCoord);
+    double sigX2 = sumVecPow(xCoord, 2);
+
+    // Calculating row 2
+    // sigX;
+    // sigX2;
+    double sigX3 = sumVecPow(xCoord, 3);
+
+    // Calculating row 3
+    // sigX2;
+    // sigX3;
+    double sigX4 = sumVecPow(xCoord, 4);
+
+    // Calculating right column 1
+    double sigY = sumVec(yCoord);
+    double sigXsigY = sumVecPowXY(xCoord, 1, yCoord, 1);
+    double sigX2sigY = sumVecPowXY(xCoord, 2, yCoord, 1);
+
+    // temp return.
+    return xCoord;
+}
+
+double sumVec(vector<double> dataVec)
+{
+    double sum = 0.0;
+    for (int i = 0; i < dataVec.size(); i++)
+    {
+        sum = sum + dataVec[i];
+    }
+
+    return sum;
+}
+double sumVecPow(vector<double> dataVec, int powOrder)
+{
+    double sum = 0.0;
+    for (int i = 0; i < dataVec.size(); i++)
+    {
+        sum = sum + pow(dataVec[i], powOrder);
+    }
+
+    return sum;
+}
+double sumVecPowXY(vector<double> dataVecX, int powOrderX, vector<double> dataVecY, int powOrderY)
+{
+    double sum = 0.0;
+    for (int i = 0; i < dataVecX.size(); i++)
+    {
+        sum = sum + pow(dataVecX[i], powOrderX) * pow(dataVecY[i], powOrderY);
+    }
+
+    return sum;
 }

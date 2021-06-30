@@ -24,5 +24,9 @@ void winSearchImg(Mat preprocess,
                   vector<vector<Rect>> *rectWindowInfo,
                   vector<vector<Point>> *leftLanePixelContainer,
                   vector<vector<Point>> *rightLanePixelContainer);
+vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int polyOrder);
+double sumVec(vector<double> dataVec);
+double sumVecPow(vector<double> dataVec, int powOrder);
+double sumVecPowXY(vector<double> dataVecX, int powOrderX, vector<double> dataVecY, int powOrderY);
 
 #endif
