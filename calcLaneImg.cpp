@@ -318,40 +318,87 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
     vector<double> a_matrix;
     double a0 = 0.0, a1 = 0.0, a2 = 0.0;
 
-    // Calculating row 1
-    double N = (double)xCoord.size();
-    double sigX = sumVec(xCoord);
-    double sigX2 = sumVecPow(xCoord, 2);
+    // Setting 3 x 3 X array for calculating a-array.
+    // double xArr[3][3];
+    double xArr[3][3] = {
+        {1, 1, -1},
+        {0, 1, 3},
+        {-1, 0, -2}};
 
-    // Calculating row 2
-    // sigX;
-    // sigX2;
-    double sigX3 = sumVecPow(xCoord, 3);
+    // // row1 init.
+    // xArr[0][0] = sumVecPow(xCoord, 0);
+    // xArr[0][1] = sumVecPow(xCoord, 1);
+    // xArr[0][2] = sumVecPow(xCoord, 2);
 
-    // Calculating row 3
-    // sigX2;
-    // sigX3;
-    double sigX4 = sumVecPow(xCoord, 4);
+    // // row2 init.
+    // xArr[1][0] = sumVecPow(xCoord, 1);
+    // xArr[1][1] = sumVecPow(xCoord, 2);
+    // xArr[1][2] = sumVecPow(xCoord, 3);
 
-    // Calculating right column 1
-    double sigY = sumVec(yCoord);
-    double sigXsigY = sumVecPowXY(xCoord, 1, yCoord, 1);
-    double sigX2sigY = sumVecPowXY(xCoord, 2, yCoord, 1);
+    // // row3 init.
+    // xArr[2][0] = sumVecPow(xCoord, 2);
+    // xArr[2][1] = sumVecPow(xCoord, 3);
+    // xArr[2][2] = sumVecPow(xCoord, 4);
+
+    // Setting 3 x 1 Y-array.
+    // double yArr[3][1];
+    double yArr[3][1] = {
+        {9}, {3}, {2}};
+
+    // yArr[0][0] = sumVecPow(yCoord, 1);
+    // yArr[1][0] = sumVecPowXY(xCoord, 1, yCoord, 1);
+    // yArr[2][0] = sumVecPowXY(xCoord, 2, yCoord, 1);
+
+    // In order to Calculating a_matrix, do gaussain elimination.
+    // formaiton is just like this : X*A = Y
+    // ref : https://www.youtube.com/watch?v=2j5Ic2V7wq4
+
+    cout << "init matrix : " << endl;
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            cout << xArr[i][j] << "\t";
+        }
+        cout << " = " << yArr[i][0];
+        cout << "\n";
+    }
+    // 대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
+    // i > j 일 경우가 해당된다.(i=j 이면 대각 행렬 요소임.)
+    double r;
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (i > j)
+            {
+                // 컬럼 0 번째 일때 적용 가능.
+                r = xArr[i][j] / xArr[0][0];
+                xArr[i][j] = 0;
+                xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[0][1];
+                xArr[i][j + 2] = xArr[i][j + 2] - r * xArr[0][2];
+                yArr[i][0] = yArr[i][0] - r * yArr[0][0];
+            }
+        }
+    }
+
+    cout << "out check : " << endl;
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            cout << xArr[i][j] << "\t";
+        }
+        cout << " = " << yArr[i][0];
+        cout << "\n";
+    }
 
     // temp return.
     return xCoord;
 }
 
-double sumVec(vector<double> dataVec)
-{
-    double sum = 0.0;
-    for (int i = 0; i < dataVec.size(); i++)
-    {
-        sum = sum + dataVec[i];
-    }
-
-    return sum;
-}
 double sumVecPow(vector<double> dataVec, int powOrder)
 {
     double sum = 0.0;
