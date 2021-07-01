@@ -373,12 +373,28 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
         {
             if (i > j)
             {
-                // 컬럼 0 번째 일때 적용 가능.
-                r = xArr[i][j] / xArr[0][0];
-                xArr[i][j] = 0;
-                xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[0][1];
-                xArr[i][j + 2] = xArr[i][j + 2] - r * xArr[0][2];
-                yArr[i][0] = yArr[i][0] - r * yArr[0][0];
+                if (j == 0)
+                {
+                    // 컬럼 0 번째 일때 적용 가능.
+                    r = xArr[i][j] / xArr[0][j];
+                    xArr[i][j] = 0;
+                    xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[0][1];
+                    xArr[i][j + 2] = xArr[i][j + 2] - r * xArr[0][2];
+                    yArr[i][0] = yArr[i][0] - r * yArr[0][0];
+                }
+                if (j == 1)
+                {
+                    // 컬럼 0 번째 일때 적용 가능.
+                    r = xArr[i][j] / xArr[j][j];
+                    xArr[i][j] = 0;
+                    xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[i - 1][j + 1];
+                    yArr[i][0] = yArr[i][0] - r * yArr[i - 1][0];
+
+                    // r = xArr[2][1] / xArr[1][1];
+                    // xArr[2][1] = 0;
+                    // xArr[2][2] = xArr[2][2] - r * xArr[1][2];
+                    // yArr[2][0] = yArr[2][0] - r * yArr[1][0];
+                }
             }
         }
     }
