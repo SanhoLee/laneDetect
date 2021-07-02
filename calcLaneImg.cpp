@@ -319,35 +319,29 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
     double a0 = 0.0, a1 = 0.0, a2 = 0.0;
 
     // Setting 3 x 3 X array for calculating a-array.
-    // double xArr[3][3];
-    double xArr[3][3] = {
-        {1, 1, -1},
-        {0, 1, 3},
-        {-1, 0, -2}};
+    double xArr[3][3];
 
     // // row1 init.
-    // xArr[0][0] = sumVecPow(xCoord, 0);
-    // xArr[0][1] = sumVecPow(xCoord, 1);
-    // xArr[0][2] = sumVecPow(xCoord, 2);
+    xArr[0][0] = sumVecPow(xCoord, 0);
+    xArr[0][1] = sumVecPow(xCoord, 1);
+    xArr[0][2] = sumVecPow(xCoord, 2);
 
     // // row2 init.
-    // xArr[1][0] = sumVecPow(xCoord, 1);
-    // xArr[1][1] = sumVecPow(xCoord, 2);
-    // xArr[1][2] = sumVecPow(xCoord, 3);
+    xArr[1][0] = sumVecPow(xCoord, 1);
+    xArr[1][1] = sumVecPow(xCoord, 2);
+    xArr[1][2] = sumVecPow(xCoord, 3);
 
     // // row3 init.
-    // xArr[2][0] = sumVecPow(xCoord, 2);
-    // xArr[2][1] = sumVecPow(xCoord, 3);
-    // xArr[2][2] = sumVecPow(xCoord, 4);
+    xArr[2][0] = sumVecPow(xCoord, 2);
+    xArr[2][1] = sumVecPow(xCoord, 3);
+    xArr[2][2] = sumVecPow(xCoord, 4);
 
     // Setting 3 x 1 Y-array.
-    // double yArr[3][1];
-    double yArr[3][1] = {
-        {9}, {3}, {2}};
+    double yArr[3][1];
 
-    // yArr[0][0] = sumVecPow(yCoord, 1);
-    // yArr[1][0] = sumVecPowXY(xCoord, 1, yCoord, 1);
-    // yArr[2][0] = sumVecPowXY(xCoord, 2, yCoord, 1);
+    yArr[0][0] = sumVecPow(yCoord, 1);
+    yArr[1][0] = sumVecPowXY(xCoord, 1, yCoord, 1);
+    yArr[2][0] = sumVecPowXY(xCoord, 2, yCoord, 1);
 
     // In order to Calculating a_matrix, do gaussain elimination.
     // formaiton is just like this : X*A = Y
@@ -364,40 +358,9 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
         cout << " = " << yArr[i][0];
         cout << "\n";
     }
-    // 대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
-    // i > j 일 경우가 해당된다.(i=j 이면 대각 행렬 요소임.)
-    double r;
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            if (i > j)
-            {
-                if (j == 0)
-                {
-                    // 컬럼 0 번째 일때 적용 가능.
-                    r = xArr[i][j] / xArr[0][j];
-                    xArr[i][j] = 0;
-                    xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[0][1];
-                    xArr[i][j + 2] = xArr[i][j + 2] - r * xArr[0][2];
-                    yArr[i][0] = yArr[i][0] - r * yArr[0][0];
-                }
-                if (j == 1)
-                {
-                    // 컬럼 0 번째 일때 적용 가능.
-                    r = xArr[i][j] / xArr[j][j];
-                    xArr[i][j] = 0;
-                    xArr[i][j + 1] = xArr[i][j + 1] - r * xArr[i - 1][j + 1];
-                    yArr[i][0] = yArr[i][0] - r * yArr[i - 1][0];
 
-                    // r = xArr[2][1] / xArr[1][1];
-                    // xArr[2][1] = 0;
-                    // xArr[2][2] = xArr[2][2] - r * xArr[1][2];
-                    // yArr[2][0] = yArr[2][0] - r * yArr[1][0];
-                }
-            }
-        }
-    }
+    // (gaussian elimination.)대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
+    makeZero_UnderDiagonalElement(xArr, yArr);
 
     cout << "out check : " << endl;
 
@@ -434,4 +397,43 @@ double sumVecPowXY(vector<double> dataVecX, int powOrderX, vector<double> dataVe
     }
 
     return sum;
+}
+
+void makeZero_UnderDiagonalElement(double xArr[][3], double yArr[][1])
+{
+    /* 
+    input/output : xArr, yArr
+    
+    Just for 2nd-order polynomial.
+
+    */
+    cout << "makeZero_UnderDiagonalElement : " << __LINE__ << endl;
+
+    double r;
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (i > j)
+            {
+                if (j == 0)
+                {
+                    // 컬럼 0 번째 일때(j=0) -> 해당 요소를 0으로 만듬.
+                    r = xArr[i][j] / xArr[j][j];
+                    xArr[i][j] = 0;
+                    xArr[i][j + 1] = xArr[i][j + 1] - r * (xArr[i - 1][j + 1]);
+                    xArr[i][j + 2] = xArr[i][j + 2] - r * (xArr[0][2]);
+                    yArr[i][0] = yArr[i][0] - r * (yArr[0][0]);
+                }
+                if (j == 1)
+                {
+                    // 컬럼 1 번째 일때 -> 해당 요소를 0으로 만듬.
+                    r = xArr[i][j] / xArr[j][j];
+                    xArr[i][j] = 0;
+                    xArr[i][j + 1] = xArr[i][j + 1] - r * (xArr[i - 1][j + 1]);
+                    yArr[i][0] = yArr[i][0] - r * (yArr[1][0]);
+                }
+            }
+        }
+    }
 }
