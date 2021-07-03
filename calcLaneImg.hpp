@@ -31,5 +31,12 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
 
 double sumVecPow(vector<double> dataVec, int powOrder);
 double sumVecPowXY(vector<double> dataVecX, int powOrderX, vector<double> dataVecY, int powOrderY);
+void initGaussianMatrix(
+    int polyOrder,
+    vector<double> *xCoord,
+    vector<double> *yCoord,
+    double xArr[][3],
+    double yArr[][1]);
+void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1]);
 
 #endif

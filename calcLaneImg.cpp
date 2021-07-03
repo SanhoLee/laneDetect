@@ -309,57 +309,30 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
 {
     /* return : coefficients of the polynomial equation.
 
-     first. make funtion for 2nd-order polynomial equation.
-     second. normalizing function.
+     1. Do gaussian elimination.
+     2. get coefficients for nth-order polynomial equation.
+     3. build nth-order polynomial equation.
+
+     INFORMATION : 
+     gaussian elimination form.
+     -> X * A = Y
+     (X,Y is DATA Value. The target is A matrix, Coefficient of 2nd-order polynomial equation.)
 
      */
 
-    // initializing a matrix.
-    vector<double> a_matrix;
-    double a0 = 0.0, a1 = 0.0, a2 = 0.0;
+    // Setting X array(3 x 3) and Y-array(3 x 1)
+    double xArr[polyOrder + 1][3];
+    double yArr[polyOrder + 1][1];
+    double aArr[polyOrder + 1][1];
 
-    // Setting 3 x 3 X array for calculating a-array.
-    double xArr[3][3];
+    /* In order to Calculating a_matrix, Do gaussain elimination.
+     ref : https://www.youtube.com/watch?v=2j5Ic2V7wq4 
+    */
 
-    // // row1 init.
-    xArr[0][0] = sumVecPow(xCoord, 0);
-    xArr[0][1] = sumVecPow(xCoord, 1);
-    xArr[0][2] = sumVecPow(xCoord, 2);
+    // 1. init matrix.
+    initGaussianMatrix(polyOrder, &xCoord, &yCoord, xArr, yArr);
 
-    // // row2 init.
-    xArr[1][0] = sumVecPow(xCoord, 1);
-    xArr[1][1] = sumVecPow(xCoord, 2);
-    xArr[1][2] = sumVecPow(xCoord, 3);
-
-    // // row3 init.
-    xArr[2][0] = sumVecPow(xCoord, 2);
-    xArr[2][1] = sumVecPow(xCoord, 3);
-    xArr[2][2] = sumVecPow(xCoord, 4);
-
-    // Setting 3 x 1 Y-array.
-    double yArr[3][1];
-
-    yArr[0][0] = sumVecPow(yCoord, 1);
-    yArr[1][0] = sumVecPowXY(xCoord, 1, yCoord, 1);
-    yArr[2][0] = sumVecPowXY(xCoord, 2, yCoord, 1);
-
-    // In order to Calculating a_matrix, do gaussain elimination.
-    // formaiton is just like this : X*A = Y
-    // ref : https://www.youtube.com/watch?v=2j5Ic2V7wq4
-
-    cout << "init matrix : " << endl;
-
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            cout << xArr[i][j] << "\t";
-        }
-        cout << " = " << yArr[i][0];
-        cout << "\n";
-    }
-
-    // (gaussian elimination.)대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
+    // 2. gaussian elimination. 대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
     makeZero_UnderDiagonalElement(xArr, yArr);
 
     cout << "out check : " << endl;
@@ -373,6 +346,13 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
         cout << " = " << yArr[i][0];
         cout << "\n";
     }
+    // 3. gaussian elimination. Calculating a-array value.
+    calcCoeffsValue(xArr, yArr, aArr);
+
+    cout << "aArr : " << endl;
+    cout << "a0 : " << aArr[0][0] << endl;
+    cout << "a1 : " << aArr[1][0] << endl;
+    cout << "a2 : " << aArr[2][0] << endl;
 
     // temp return.
     return xCoord;
@@ -436,4 +416,55 @@ void makeZero_UnderDiagonalElement(double xArr[][3], double yArr[][1])
             }
         }
     }
+}
+
+void initGaussianMatrix(int polyOrder,
+                        vector<double> *xCoord,
+                        vector<double> *yCoord,
+                        double xArr[][3],
+                        double yArr[][1])
+{
+    /*
+    INPUT   : xCoord, yCoord
+    OUTPUT  : xArr, yArr
+
+
+    Gaussian Elimination foramt.
+    -> X*A = Y
+
+    X,Y is data.
+    Target is A.
+
+    Actually xArr[][3] is not good for nomarlization form.
+        
+    */
+
+    // row init.
+    for (int i = 0; i < polyOrder + 1; i++)
+    {
+        for (int j = 0; j < polyOrder + 1; j++)
+        {
+            xArr[i][j] = sumVecPow(*xCoord, i + j);
+        }
+    }
+
+    // Y column init.
+    yArr[0][0] = sumVecPow(*yCoord, 1);
+    for (int i = 1; i < polyOrder + 1; i++)
+    {
+        yArr[i][0] = sumVecPowXY(*xCoord, i, *yCoord, 1);
+    }
+}
+
+void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1])
+{
+    /*
+    INPUT   : xArr, yArr that is getting from gaussian elimination.
+    OUTPUT  : aArr (Coefficients array for 2nd-order polynomial equation.) 
+        
+    */
+
+    aArr[2][0] = yArr[2][0] / xArr[2][2];
+    aArr[1][0] = (yArr[1][0] - xArr[1][2] * aArr[2][0]) / xArr[1][1];
+    aArr[0][0] = (yArr[0][0] - xArr[0][2] * aArr[2][0] - xArr[0][1] * aArr[1][0]) / xArr[0][0];
 }
