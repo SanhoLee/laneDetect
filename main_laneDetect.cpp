@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     Mat img, imgCombined;
     Mat invMatx;
 
-    vector<Point2f> roadBoundaryPtsArr;
+    vector<vector<double>> coeffsLR;
 
     /* 
     pipeline     :: preprocessing img.
@@ -25,8 +25,17 @@ int main(int argc, char **argv)
     }
 
     imgCombined = preprocImg(img, &invMatx);
-    roadBoundaryPtsArr = calcLaneImg(imgCombined);
-    // drawLane(roadBoundaryPtsArr);
+    coeffsLR = calcLaneImg(imgCombined);
+
+    for (int i = 0; i < coeffsLR.size(); i++)
+    {
+        cout << i + 1 << endl;
+        cout << coeffsLR[i][0] << endl;
+        cout << coeffsLR[i][1] << endl;
+        cout << coeffsLR[i][2] << endl;
+    }
+
+    // drawLane(imgCombined, coeffsLR);
 
     imshow("imgConbined", imgCombined * 255);
     waitKey(0);

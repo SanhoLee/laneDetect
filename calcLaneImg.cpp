@@ -7,7 +7,7 @@
 int minNumPix = 40;
 int numWindow = 10;
 
-vector<Point2f> calcLaneImg(Mat imgCombined)
+vector<vector<double>> calcLaneImg(Mat imgCombined)
 {
     /*  
         description :
@@ -18,7 +18,6 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
             Detected lane Boundary Points for Array.
             (It is calculated by 2nd polynomial equation.)
     */
-    vector<Point2f> laneBoundary_coord;
 
     // rectangle window info for each side of lane.
     // container for each side window pixel
@@ -52,34 +51,34 @@ vector<Point2f> calcLaneImg(Mat imgCombined)
 
     // (todos..)From non-zero Mat, get x and y coordinate for preprocessed pixel position.
 
-    vector<double> xCoord = {0.0, 3.0, 5.0, 7.0, 10.0};
-    vector<double> yCoord = {10, 11.6, 24.1, 55.7, 103.9};
+    vector<double> xCoordLeft;
+    vector<double> yCoordLeft;
+    vector<double> xCoordRight;
+    vector<double> yCoordRight;
 
-    vector<double> polyCoeffs;
+    vector<double> polyCoeffsLeft;
+    vector<double> polyCoeffsRight;
 
-    polyCoeffs = polyFit_cpp(xCoord, yCoord, 2);
+    // make each x and y array from point data.
+    for (int i = 0; i < leftPixelPosXY_OneDim.size(); i++)
+    {
+        xCoordLeft.push_back(leftPixelPosXY_OneDim[i].x);
+        yCoordLeft.push_back(leftPixelPosXY_OneDim[i].y);
+    }
 
-    /* 6. array for x, y direction. */
+    for (int i = 0; i < rightPixelPosXY_OneDim.size(); i++)
+    {
+        xCoordRight.push_back(rightPixelPosXY_OneDim[i].x);
+        yCoordRight.push_back(rightPixelPosXY_OneDim[i].y);
+    }
 
-    // squreInfo(vector) : Including left and right Rectange Info. structure? just vector?
-    // It will be used for window searching
-    // return all squre info for array type of it.
-    // squareInfo = findLinePos(imgCombined);
+    polyCoeffsLeft = polyFit_cpp(xCoordLeft, yCoordLeft, 2);
+    polyCoeffsRight = polyFit_cpp(xCoordRight, yCoordRight, 2);
 
-    // determining each side curvature for 2nd polynomial equation.
-    // return the coefficient for the 2nd polynomial equation.
-    // polyCoeffs_left = determineCurvature(squreInfo_left);
-    // polyCoeffs_right = determineCurvature(squreInfo_right);
+    // 또는 그냥 다항식 계수 리턴?
+    vector<vector<double>> coeffsLR = {polyCoeffsLeft, polyCoeffsRight};
 
-    // x_left = Mat();
-    // x_right = Mat();
-
-    // y_left = calcPolyNomial(2, polyCoeffs_left);
-    // y_right = calcPolyNomial(2, polyCoeffs_left);
-
-    // laneBoundary_coord = {};
-
-    return laneBoundary_coord;
+    return coeffsLR;
 }
 
 Mat halfDownImg(Mat original)
@@ -281,7 +280,7 @@ void winSearchImg(Mat preprocess,
         reCenterCurrentPos(rightWindowPoint_IDX, &rightX_current);
     }
 
-    Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
+    // Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
 
     // for (int i = 0; i < numWindow; i++)
     // {
@@ -335,27 +334,18 @@ vector<double> polyFit_cpp(vector<double> xCoord, vector<double> yCoord, int pol
     // 2. gaussian elimination. 대각 행렬 요소 왼쪽 아래 요소를 모두 0으로 만들어주는 작업.
     makeZero_UnderDiagonalElement(xArr, yArr);
 
-    cout << "out check : " << endl;
-
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            cout << xArr[i][j] << "\t";
-        }
-        cout << " = " << yArr[i][0];
-        cout << "\n";
-    }
     // 3. gaussian elimination. Calculating a-array value.
     calcCoeffsValue(xArr, yArr, aArr);
 
-    cout << "aArr : " << endl;
-    cout << "a0 : " << aArr[0][0] << endl;
-    cout << "a1 : " << aArr[1][0] << endl;
-    cout << "a2 : " << aArr[2][0] << endl;
+    // transfer data from array to vector type.
+    vector<double> rtnArr(sizeof(aArr) / sizeof(aArr[0]));
 
-    // temp return.
-    return xCoord;
+    for (int i = 0; i < sizeof(aArr) / sizeof(aArr[0]); i++)
+    {
+        rtnArr[i] = aArr[i][0];
+    }
+
+    return rtnArr;
 }
 
 double sumVecPow(vector<double> dataVec, int powOrder)
@@ -387,7 +377,6 @@ void makeZero_UnderDiagonalElement(double xArr[][3], double yArr[][1])
     Just for 2nd-order polynomial.
 
     */
-    cout << "makeZero_UnderDiagonalElement : " << __LINE__ << endl;
 
     double r;
     for (int i = 0; i < 3; i++)
@@ -467,4 +456,9 @@ void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1])
     aArr[2][0] = yArr[2][0] / xArr[2][2];
     aArr[1][0] = (yArr[1][0] - xArr[1][2] * aArr[2][0]) / xArr[1][1];
     aArr[0][0] = (yArr[0][0] - xArr[0][2] * aArr[2][0] - xArr[0][1] * aArr[1][0]) / xArr[0][0];
+}
+
+int calcPoly(double xIn, vector<double> polyCoeffs)
+{
+    return (int)round(polyCoeffs[0] + polyCoeffs[1] * xIn + polyCoeffs[2] * pow(xIn, 2));
 }

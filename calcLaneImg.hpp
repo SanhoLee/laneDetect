@@ -8,7 +8,7 @@ using namespace cv;
 
 Mat halfDownImg(Mat original);
 
-vector<Point2f> calcLaneImg(Mat imgCombined);
+vector<vector<double>> calcLaneImg(Mat imgCombined);
 vector<int> sumColElm(Mat img_binary);
 vector<Point> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox);
 vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector);
@@ -38,5 +38,6 @@ void initGaussianMatrix(
     double xArr[][3],
     double yArr[][1]);
 void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1]);
+int calcPoly(double xIn, vector<double> polyCoeffs);
 
 #endif
