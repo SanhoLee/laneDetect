@@ -75,7 +75,7 @@ vector<vector<double>> calcLaneImg(Mat imgCombined)
     polyCoeffsLeft = polyFit_cpp(xCoordLeft, yCoordLeft, 2);
     polyCoeffsRight = polyFit_cpp(xCoordRight, yCoordRight, 2);
 
-    // 또는 그냥 다항식 계수 리턴?
+    // 다항식 계수 리턴
     vector<vector<double>> coeffsLR = {polyCoeffsLeft, polyCoeffsRight};
 
     return coeffsLR;

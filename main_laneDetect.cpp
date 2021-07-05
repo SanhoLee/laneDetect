@@ -2,6 +2,7 @@
 #include "CV_header.hpp"
 #include "preprocImg.hpp"
 #include "calcLaneImg.hpp"
+#include "drawOnWarpImg.hpp"
 
 int main(int argc, char **argv)
 {
@@ -26,19 +27,9 @@ int main(int argc, char **argv)
 
     imgCombined = preprocImg(img, &invMatx);
     coeffsLR = calcLaneImg(imgCombined);
+    drawOnWarpImg(imgCombined, coeffsLR);
 
-    for (int i = 0; i < coeffsLR.size(); i++)
-    {
-        cout << i + 1 << endl;
-        cout << coeffsLR[i][0] << endl;
-        cout << coeffsLR[i][1] << endl;
-        cout << coeffsLR[i][2] << endl;
-    }
-
-    // drawLane(imgCombined, coeffsLR);
-
-    imshow("imgConbined", imgCombined * 255);
-    waitKey(0);
+    // on later, draw lane on original img...
 
     return 0;
 }
