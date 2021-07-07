@@ -47,33 +47,53 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
     merge(channels, dstImg);
 
     // polynomial coefficients를 이용해서, fit data를 이미지에 출력한다.
-
     // 2차 방정식에 사용할 x인풋을 생성
     vector<int> xPix;
-    for (int i = 0; i < imgBinary.rows; i++)
+    for (int i = 0; i < imgBinary.cols; i++)
     {
         xPix.push_back(i);
     }
 
     cout << "check1" << endl;
+
     // Define yPix variables and push the value on the vector variables.
     vector<int> yPixLeft;
     vector<int> yPixRight;
-    for (int i = 0; i < imgBinary.rows; i++)
+
+    // By using 2nd-order polynomial coefficients, calculate y Pixl Value and push on the vector array.
+    for (int i = 0; i < imgBinary.cols; i++)
     {
-        // calculate each side y value with 2nd-order polynomial coefficients.
-        // push back on each Pixel vector variable.
-        yPixLeft.push_back((int)round(coeffsLR[0][0] + coeffsLR[0][1] * xPix[i] + coeffsLR[0][2] * xPix[i] * xPix[i]));
+        int yLeft = 0;
+        int yRight = 0;
+
+        yLeft = (int)round(coeffsLR[0][0] + coeffsLR[0][1] * xPix[i] + coeffsLR[0][2] * xPix[i] * xPix[i]);
+        yRight = (int)round(coeffsLR[1][0] + coeffsLR[1][1] * xPix[i] + coeffsLR[1][2] * xPix[i] * xPix[i]);
+
+        yPixLeft.push_back(yLeft);
+        yPixRight.push_back(yRight);
     }
+
     cout << "check2" << endl;
 
-    // (todos...)Set some color on fitted pixel position that is fitted with 2nd-order polynomail equation.
-    for (int i = 0; i < imgBinary.rows; i++)
+    // give colored pixel value for fitted position from the polynomial.
+    // 1. Left Lane
+    for (int i = 0; i < imgBinary.cols; i++)
     {
-        // dstImg.at<Vec3b>(xPix[i], yPixLeft[i]) = {0, 0, 255};
-        dstImg.at<Vec3b>(yPixLeft[i], xPix[i]) = {0, 0, 255};
+        if (yPixLeft[i] > 0 && yPixLeft[i] < dstImg.rows)
+        {
+            dstImg.at<Vec3b>(yPixLeft[i], xPix[i]) = {0, 0, 255};
+        }
     }
     cout << "check3" << endl;
+
+    // 2. Right Lane
+    for (int i = 0; i < imgBinary.cols; i++)
+    {
+        if (yPixRight[i] > 0 && yPixRight[i] < dstImg.rows)
+        {
+            dstImg.at<Vec3b>(yPixRight[i], xPix[i]) = {0, 0, 255};
+        }
+    }
 
     imshow("dstImg", dstImg);
     waitKey(0);
