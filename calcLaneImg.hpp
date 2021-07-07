@@ -8,7 +8,12 @@ using namespace cv;
 
 Mat halfDownImg(Mat original);
 
-vector<vector<double>> calcLaneImg(Mat imgCombined);
+void calcLaneImg(
+    Mat imgCombined,
+    vector<vector<Rect>> *rectWindowInfo,
+    vector<vector<Point>> *pixelPosXY,
+    vector<vector<double>> *coeffsLR);
+
 vector<int> sumColElm(Mat img_binary);
 vector<Point> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox);
 vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector);
@@ -21,7 +26,7 @@ void reCenterCurrentPos(vector<Point> pntIndexArray, int *currentXPos);
 void winSearchImg(Mat preprocess,
                   int numWindow,
                   vector<int> xBase,
-                  vector<vector<Rect>> *rectWindowInfo,
+                  vector<vector<Rect>> **rectWindowInfo,
                   vector<vector<Point>> *leftLanePixelContainer,
                   vector<vector<Point>> *rightLanePixelContainer);
 // void makeZero_UnderDiagonalElement(double xArr[3][3], double yArr[3][1]);

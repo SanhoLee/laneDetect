@@ -33,6 +33,12 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
         }
     }
 
+    // Give Pixel for LeftLane
+    // Scalar leftLaneColor(255, 0, 0);
+
+    // Give Pixel for RightLane
+    // Scalar leftLaneColor(100, 200, 255);
+
     /* 
     np.dstack(vector A, vector B, vector C) 와 같은 작업을 C++로 실행
     각 채널의 픽셀 값을 바이너리 이미지의 픽셀 값으로 채워준다.

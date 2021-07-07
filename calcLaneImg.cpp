@@ -7,21 +7,29 @@
 int minNumPix = 40;
 int numWindow = 10;
 
-vector<vector<double>> calcLaneImg(Mat imgCombined)
+// vector<vector<double>> calcLaneImg(Mat imgCombined, vector<vector<Rect>> rectWindowInfo, vector<vector<Point>> pixelPosXY, vector<vector<double>> coeffsLR)
+void calcLaneImg(
+    Mat imgCombined,
+    vector<vector<Rect>> *rectWindowInfo,
+    vector<vector<Point>> *pixelPosXY,
+    vector<vector<double>> *coeffsLR)
 {
     /*  
         description :
             Do Window Search.
             find 2nd Polynomial Coefficient and get x, y pixel for detected lanes.
-        
+        input   :
+            imgCombined(binary img src.)
         return  : 
-            Detected lane Boundary Points for Array.
-            (It is calculated by 2nd polynomial equation.)
+            rectWindowInfo
+            pixelPosXY
+            coeffsLR
+
+            Data by calculatin for 2nd-order polynomial equation.
+            And some source for vizualiztion the detected and fitted pixel position.
     */
 
-    // rectangle window info for each side of lane.
     // container for each side window pixel
-    vector<vector<Rect>> rectWindowInfo;
     vector<vector<Point>> leftPixelContainer;
     vector<vector<Point>> rightPixelContainer;
 
@@ -44,13 +52,15 @@ vector<vector<double>> calcLaneImg(Mat imgCombined)
                  &rightPixelContainer);
 
     /* 5. coefficient for the 2nd polynomial equation */
-
     // concatenating two dimension vector -> one dimension vector.
     vector<Point> leftPixelPosXY_OneDim = dimDownFrom2To1(leftPixelContainer);
     vector<Point> rightPixelPosXY_OneDim = dimDownFrom2To1(rightPixelContainer);
 
-    // (todos..)From non-zero Mat, get x and y coordinate for preprocessed pixel position.
+    // return pixelPosXY
+    pixelPosXY->push_back(leftPixelPosXY_OneDim);
+    pixelPosXY->push_back(rightPixelPosXY_OneDim);
 
+    // Starting Fitting 2nd-order polynomial equation.
     vector<double> xCoordLeft;
     vector<double> yCoordLeft;
     vector<double> xCoordRight;
@@ -76,9 +86,8 @@ vector<vector<double>> calcLaneImg(Mat imgCombined)
     polyCoeffsRight = polyFit_cpp(xCoordRight, yCoordRight, 2);
 
     // 다항식 계수 리턴
-    vector<vector<double>> coeffsLR = {polyCoeffsLeft, polyCoeffsRight};
-
-    return coeffsLR;
+    coeffsLR->push_back(polyCoeffsLeft);
+    coeffsLR->push_back(polyCoeffsRight);
 }
 
 Mat halfDownImg(Mat original)
@@ -225,7 +234,7 @@ void reCenterCurrentPos(vector<Point> pntIndexArray, int *currentXPos)
 void winSearchImg(Mat preprocess,
                   int numWindow,
                   vector<int> xBase,
-                  vector<vector<Rect>> *rectWindowInfo,
+                  vector<vector<Rect>> **rectWindowInfo,
                   vector<vector<Point>> *leftPixelContainer,
                   vector<vector<Point>> *rightPixelContainer)
 {
@@ -264,7 +273,9 @@ void winSearchImg(Mat preprocess,
         // (make array.)1. Rect object info for specific window.
         Rect curLeftWindow(win_xLeft_low, win_yLow, 2 * margin, window_height);
         Rect curRightWindow(win_xRight_low, win_yLow, 2 * margin, window_height);
-        rectWindowInfo->push_back({curLeftWindow, curRightWindow});
+
+        // return rectangle info.
+        rectWindowInfo[0]->push_back({curLeftWindow, curRightWindow});
 
         // (make array.)2. found pixel index element for specific window.
         vector<Point> leftWindowPoint_IDX = getIndexArray_onWindow(nonZeroPos, curLeftWindow);
@@ -279,17 +290,6 @@ void winSearchImg(Mat preprocess,
         reCenterCurrentPos(leftWindowPoint_IDX, &leftX_current);
         reCenterCurrentPos(rightWindowPoint_IDX, &rightX_current);
     }
-
-    // Mat test(preprocess.rows, preprocess.cols, CV_8UC3, Scalar(255, 255, 255));
-
-    // for (int i = 0; i < numWindow; i++)
-    // {
-    //     rectangle(test, rectWindowInfo[0][i][0], Scalar(255, 0, 0), 3, LINE_AA);
-    //     rectangle(test, rectWindowInfo[0][i][1], Scalar(0, 0, 255), 3, LINE_AA);
-    // }
-
-    // imshow("test", test);
-    // waitKey(0);
 }
 
 vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector)

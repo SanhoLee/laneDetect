@@ -11,6 +11,8 @@ int main(int argc, char **argv)
     Mat invMatx;
 
     vector<vector<double>> coeffsLR;
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<Point>> pixelPosXY;
 
     /* 
     pipeline     :: preprocessing img.
@@ -26,8 +28,13 @@ int main(int argc, char **argv)
     }
 
     imgCombined = preprocImg(img, &invMatx);
-    coeffsLR = calcLaneImg(imgCombined);
-    drawOnWarpImg(imgCombined, coeffsLR);
+    calcLaneImg(imgCombined, &rectWindowInfo, &pixelPosXY, &coeffsLR);
+
+    cout << "coeffsLR size : " << coeffsLR.size() << endl;
+    cout << "pixelPosXY size : " << pixelPosXY.size() << endl;
+    cout << "rectWindowInfo size : " << rectWindowInfo.size() << endl;
+
+    // drawOnWarpImg(imgCombined, coeffsLR);
 
     // on later, draw lane on original img...
 
