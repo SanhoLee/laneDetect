@@ -1,14 +1,18 @@
 #include <iostream>
 
 #include "common.hpp"
+#include "calcLaneImg.hpp"
 #include "drawOnWarpImg.hpp"
 
-void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
+void drawOnWarpImg(Mat imgBinary)
 {
-    cout << "drawOnWarpImg function :: " << endl;
+
+    vector<vector<double>> coeffsLR;
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<Point>> pixelPosXY;
+    calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
 
     Mat dstImg;
-
     // 이렇게 하면 모든 위치의 픽셀 값이 지정한 하나의 값으로 채워진다.
     // Mat channel_B = Mat(imgBinary.rows, imgBinary.cols, CV_8UC1, 100);
     // Mat channel_G = Mat(imgBinary.rows, imgBinary.cols, CV_8UC1, 100);
@@ -33,12 +37,6 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
         }
     }
 
-    // Give Pixel for LeftLane
-    // Scalar leftLaneColor(255, 0, 0);
-
-    // Give Pixel for RightLane
-    // Scalar leftLaneColor(100, 200, 255);
-
     /* 
     np.dstack(vector A, vector B, vector C) 와 같은 작업을 C++로 실행
     각 채널의 픽셀 값을 바이너리 이미지의 픽셀 값으로 채워준다.
@@ -60,8 +58,6 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
         xPix.push_back(i);
     }
 
-    cout << "check1" << endl;
-
     // Define yPix variables and push the value on the vector variables.
     vector<int> yPixLeft;
     vector<int> yPixRight;
@@ -79,8 +75,6 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
         yPixRight.push_back(yRight);
     }
 
-    cout << "check2" << endl;
-
     // give colored pixel value for fitted position from the polynomial.
     // 1. Left Lane
     for (int i = 0; i < imgBinary.cols; i++)
@@ -90,7 +84,6 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
             dstImg.at<Vec3b>(yPixLeft[i], xPix[i]) = {0, 0, 255};
         }
     }
-    cout << "check3" << endl;
 
     // 2. Right Lane
     for (int i = 0; i < imgBinary.cols; i++)
@@ -101,8 +94,55 @@ void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR)
         }
     }
 
+    drawRectangle(dstImg, rectWindowInfo);
+
     imshow("dstImg", dstImg);
     waitKey(0);
     // make uint 8U img.
     // give pixel value(255,255,255) to each index of mat.
+}
+
+void drawRectangle(Mat dstImg, vector<vector<Rect>> rectWindowInfo)
+{
+    int numRect = rectWindowInfo.size();
+
+    if (numRect == 0)
+    {
+        //(TODO) end this function...
+    }
+
+    for (int i = 0; i < rectWindowInfo.size(); i++)
+    {
+        // left side
+        rectangle(dstImg, rectWindowInfo[i][0], Scalar(255, 255, 0), 3, LINE_AA);
+        // right side
+        rectangle(dstImg, rectWindowInfo[i][1], Scalar(0, 255, 0), 3, LINE_AA);
+    }
+}
+
+void drawPolygonAndFill(Mat imgBinary)
+{
+    vector<vector<double>> coeffsLR, coeffsLRNext;
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<Point>> pixelPosXY, pixelPosXYNext;
+
+    calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
+    polyfit_using_prev_fitCoeffs(imgBinary, coeffsLR, &pixelPosXYNext, &coeffsLRNext);
+
+    // (todo) 부드러운 형상의 레인 바운더리를 형성함.
+}
+
+void polyfit_using_prev_fitCoeffs(
+    Mat imgBinary,
+    vector<vector<double>> coeffsLR,
+    vector<vector<Point>> *pixelPosXYNext,
+    vector<vector<double>> *coeffsLRNext)
+{
+    Mat nonZeros;
+    findNonZero(imgBinary, nonZeros);
+
+    // todo : 레퍼런스에서 제시하고 있는 다항식 계산에 사용된 x,y 에 대한 데이터 사용이 반대인 듯.
+    // 나 , 이미지의 폭방향 x 높이 방향 y
+    // 레퍼런스, 이미지의 높이 방향 : x, 이미지의 폭방향 : y
+    // --> 내가 한 방법으로 하면, 폭방향의 새로운 기준 위치를 찾아주기 위해, 다항식의 해를 구하는 방법으로 접근해야한다. 너무 복잡함. 그러므로, 이 과정을 쉽게 처리하기 위해서 x, y의 대입 방식을 다시 고쳐줄 필요가 있다. 그렇게 되면, 폭방향의 새로운 위치는, 이전에 구한 다항식에서 미지수 값만 대입시킨 f(x) 값을 그대로 사용할 수 있다.
 }

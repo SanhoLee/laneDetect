@@ -6,6 +6,13 @@
 using namespace std;
 using namespace cv;
 
-void drawOnWarpImg(Mat imgBinary, vector<vector<double>> coeffsLR);
+void drawOnWarpImg(Mat imgBinary);
+void drawRectangle(Mat dstImg, vector<vector<Rect>> rectWindowInfo);
+void drawPolygonAndFill(Mat imgBinary);
+void polyfit_using_prev_fitCoeffs(
+    Mat imgBinary,
+    vector<vector<double>> coeffsLR,
+    vector<vector<Point>> *pixelPosXYNext,
+    vector<vector<double>> *coeffsLRNext);
 
 #endif
