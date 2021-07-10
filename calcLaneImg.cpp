@@ -61,10 +61,10 @@ void calcLaneImg(
     pixelPosXY->push_back(rightPixelPosXY_OneDim);
 
     // Starting Fitting 2nd-order polynomial equation.
-    vector<double> xCoordLeft;
-    vector<double> yCoordLeft;
-    vector<double> xCoordRight;
-    vector<double> yCoordRight;
+    vector<double> inCoordLeft;
+    vector<double> outCoordLeft;
+    vector<double> inCoordRight;
+    vector<double> outCoordRight;
 
     vector<double> polyCoeffsLeft;
     vector<double> polyCoeffsRight;
@@ -72,18 +72,18 @@ void calcLaneImg(
     // make each x and y array from point data.
     for (int i = 0; i < leftPixelPosXY_OneDim.size(); i++)
     {
-        xCoordLeft.push_back(leftPixelPosXY_OneDim[i].x);
-        yCoordLeft.push_back(leftPixelPosXY_OneDim[i].y);
+        inCoordLeft.push_back(leftPixelPosXY_OneDim[i].y);
+        outCoordLeft.push_back(leftPixelPosXY_OneDim[i].x);
     }
 
     for (int i = 0; i < rightPixelPosXY_OneDim.size(); i++)
     {
-        xCoordRight.push_back(rightPixelPosXY_OneDim[i].x);
-        yCoordRight.push_back(rightPixelPosXY_OneDim[i].y);
+        inCoordRight.push_back(rightPixelPosXY_OneDim[i].y);
+        outCoordRight.push_back(rightPixelPosXY_OneDim[i].x);
     }
 
-    polyCoeffsLeft = polyFit_cpp(xCoordLeft, yCoordLeft, 2);
-    polyCoeffsRight = polyFit_cpp(xCoordRight, yCoordRight, 2);
+    polyCoeffsLeft = polyFit_cpp(inCoordLeft, outCoordLeft, 2);
+    polyCoeffsRight = polyFit_cpp(inCoordRight, outCoordRight, 2);
 
     // 다항식 계수 리턴
     coeffsLR->push_back(polyCoeffsLeft);

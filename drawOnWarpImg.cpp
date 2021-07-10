@@ -53,7 +53,7 @@ void drawOnWarpImg(Mat imgBinary)
     // polynomial coefficients를 이용해서, fit data를 이미지에 출력한다.
     // 2차 방정식에 사용할 x인풋을 생성
     vector<int> xPix;
-    for (int i = 0; i < imgBinary.cols; i++)
+    for (int i = 0; i < imgBinary.rows; i++)
     {
         xPix.push_back(i);
     }
@@ -63,7 +63,7 @@ void drawOnWarpImg(Mat imgBinary)
     vector<int> yPixRight;
 
     // By using 2nd-order polynomial coefficients, calculate y Pixl Value and push on the vector array.
-    for (int i = 0; i < imgBinary.cols; i++)
+    for (int i = 0; i < imgBinary.rows; i++)
     {
         int yLeft = 0;
         int yRight = 0;
@@ -77,20 +77,20 @@ void drawOnWarpImg(Mat imgBinary)
 
     // give colored pixel value for fitted position from the polynomial.
     // 1. Left Lane
-    for (int i = 0; i < imgBinary.cols; i++)
+    for (int i = 0; i < imgBinary.rows; i++)
     {
-        if (yPixLeft[i] > 0 && yPixLeft[i] < dstImg.rows)
+        if (yPixLeft[i] > 0 && yPixLeft[i] < dstImg.cols)
         {
-            dstImg.at<Vec3b>(yPixLeft[i], xPix[i]) = {0, 0, 255};
+            dstImg.at<Vec3b>(xPix[i], yPixLeft[i]) = {0, 0, 255};
         }
     }
 
     // 2. Right Lane
-    for (int i = 0; i < imgBinary.cols; i++)
+    for (int i = 0; i < imgBinary.rows; i++)
     {
-        if (yPixRight[i] > 0 && yPixRight[i] < dstImg.rows)
+        if (yPixRight[i] > 0 && yPixRight[i] < dstImg.cols)
         {
-            dstImg.at<Vec3b>(yPixRight[i], xPix[i]) = {0, 0, 255};
+            dstImg.at<Vec3b>(xPix[i], yPixRight[i]) = {0, 0, 255};
         }
     }
 
