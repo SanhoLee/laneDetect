@@ -13,11 +13,6 @@ void drawOnWarpImg(Mat imgBinary)
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
 
     Mat dstImg;
-    // 이렇게 하면 모든 위치의 픽셀 값이 지정한 하나의 값으로 채워진다.
-    // Mat channel_B = Mat(imgBinary.rows, imgBinary.cols, CV_8UC1, 100);
-    // Mat channel_G = Mat(imgBinary.rows, imgBinary.cols, CV_8UC1, 100);
-    // Mat channel_R = Mat(imgBinary.rows, imgBinary.cols, CV_8UC1, 100);
-
     Mat channel_B = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
     Mat channel_G = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
     Mat channel_R = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
@@ -68,8 +63,8 @@ void drawOnWarpImg(Mat imgBinary)
         int yLeft = 0;
         int yRight = 0;
 
-        yLeft = (int)round(coeffsLR[0][0] + coeffsLR[0][1] * xPix[i] + coeffsLR[0][2] * xPix[i] * xPix[i]);
-        yRight = (int)round(coeffsLR[1][0] + coeffsLR[1][1] * xPix[i] + coeffsLR[1][2] * xPix[i] * xPix[i]);
+        yLeft = (int)round(coeffsLR[0][0] + coeffsLR[0][1] * xPix[i] + coeffsLR[0][2] * pow(xPix[i], 2));
+        yRight = (int)round(coeffsLR[1][0] + coeffsLR[1][1] * xPix[i] + coeffsLR[1][2] * pow(xPix[i], 2));
 
         yPixLeft.push_back(yLeft);
         yPixRight.push_back(yRight);
@@ -129,7 +124,7 @@ void drawPolygonAndFill(Mat imgBinary)
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
     polyfit_using_prev_fitCoeffs(imgBinary, coeffsLR, &pixelPosXYNext, &coeffsLRNext);
 
-    // (todo) 부드러운 형상의 레인 바운더리를 형성함.
+    //(todo) do fillpoly function with pixel Pos variables.
 }
 
 void polyfit_using_prev_fitCoeffs(
@@ -141,8 +136,28 @@ void polyfit_using_prev_fitCoeffs(
     Mat nonZeros;
     findNonZero(imgBinary, nonZeros);
 
-    // todo : 레퍼런스에서 제시하고 있는 다항식 계산에 사용된 x,y 에 대한 데이터 사용이 반대인 듯.
-    // 나 , 이미지의 폭방향 x 높이 방향 y
-    // 레퍼런스, 이미지의 높이 방향 : x, 이미지의 폭방향 : y
-    // --> 내가 한 방법으로 하면, 폭방향의 새로운 기준 위치를 찾아주기 위해, 다항식의 해를 구하는 방법으로 접근해야한다. 너무 복잡함. 그러므로, 이 과정을 쉽게 처리하기 위해서 x, y의 대입 방식을 다시 고쳐줄 필요가 있다. 그렇게 되면, 폭방향의 새로운 위치는, 이전에 구한 다항식에서 미지수 값만 대입시킨 f(x) 값을 그대로 사용할 수 있다.
+    /* 
+    with old polynomial coefficients, Calculating new lane pixel index. 
+        pixelPosXYNext[0] : left
+        pixelPosXYNext[1] : right
+    */
+    *pixelPosXYNext = getIndexArrayWithPolyCoeffs(nonZeros, coeffsLR);
+
+    vector<double> inCoordLeft;
+    vector<double> outCoordLeft;
+    vector<double> inCoordRight;
+    vector<double> outCoordRight;
+
+    makeOneDirectionArray(*pixelPosXYNext, LEFT_LANE, &inCoordLeft, &outCoordLeft);
+    makeOneDirectionArray(*pixelPosXYNext, RIGHT_LANE, &inCoordRight, &outCoordRight);
+
+    // calculating polyfit coefficients.
+    vector<double> polyCoeffsLeft_new;
+    vector<double> polyCoeffsRight_new;
+    polyCoeffsLeft_new = polyFit_cpp(inCoordLeft, outCoordLeft, 2);
+    polyCoeffsRight_new = polyFit_cpp(inCoordRight, outCoordRight, 2);
+
+    // push back on coeffs vector.
+    coeffsLRNext->push_back(polyCoeffsLeft_new);
+    coeffsLRNext->push_back(polyCoeffsRight_new);
 }

@@ -16,6 +16,7 @@ void calcLaneImg(
 
 vector<int> sumColElm(Mat img_binary);
 vector<Point> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox);
+vector<vector<Point>> getIndexArrayWithPolyCoeffs(Mat nonZeroPos, vector<vector<double>> coeffsLR);
 vector<Point> dimDownFrom2To1(vector<vector<Point>> twoDimVector);
 
 int getLeftX_base(vector<int> sumArray);
@@ -44,5 +45,10 @@ void initGaussianMatrix(
     double yArr[][1]);
 void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1]);
 int calcPoly(double xIn, vector<double> polyCoeffs);
+void makeOneDirectionArray(
+    vector<vector<Point>> pointContainer,
+    int i_side,
+    vector<double> *inCoord,
+    vector<double> *outCoord);
 
 #endif

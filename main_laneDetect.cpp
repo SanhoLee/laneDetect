@@ -24,8 +24,8 @@ int main(int argc, char **argv)
     }
 
     imgCombined = preprocImg(img, &invMatx);
-    drawOnWarpImg(imgCombined);
-    // drawPolygonAndFill(imgCombined);
+    // drawOnWarpImg(imgCombined);
+    drawPolygonAndFill(imgCombined);
 
     // on later, draw lane on original img...
 

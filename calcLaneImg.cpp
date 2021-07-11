@@ -69,18 +69,9 @@ void calcLaneImg(
     vector<double> polyCoeffsLeft;
     vector<double> polyCoeffsRight;
 
-    // make each x and y array from point data.
-    for (int i = 0; i < leftPixelPosXY_OneDim.size(); i++)
-    {
-        inCoordLeft.push_back(leftPixelPosXY_OneDim[i].y);
-        outCoordLeft.push_back(leftPixelPosXY_OneDim[i].x);
-    }
-
-    for (int i = 0; i < rightPixelPosXY_OneDim.size(); i++)
-    {
-        inCoordRight.push_back(rightPixelPosXY_OneDim[i].y);
-        outCoordRight.push_back(rightPixelPosXY_OneDim[i].x);
-    }
+    // make each x and y array from point container.
+    makeOneDirectionArray(*pixelPosXY, LEFT_LANE, &inCoordLeft, &outCoordLeft);
+    makeOneDirectionArray(*pixelPosXY, RIGHT_LANE, &inCoordRight, &outCoordRight);
 
     polyCoeffsLeft = polyFit_cpp(inCoordLeft, outCoordLeft, 2);
     polyCoeffsRight = polyFit_cpp(inCoordRight, outCoordRight, 2);
@@ -207,6 +198,49 @@ vector<Point> getIndexArray_onWindow(Mat nonZeroPos, Rect windowBox)
     }
 
     return windowPoint_IDX;
+}
+
+vector<vector<Point>> getIndexArrayWithPolyCoeffs(
+    Mat nonZeroPos,
+    vector<vector<double>> coeffsLR)
+{
+    /* return : pixel pos index for left and right side. */
+    vector<Point> leftLane_IDX;
+    vector<Point> rightLane_IDX;
+
+    int margin = 80;
+    for (int i = 0; i < nonZeroPos.rows; i++)
+    {
+        // get calculated polyfit y value (width direction value.)
+        Point inCurrent = nonZeroPos.at<Point>(i);
+        int nonZeroX = inCurrent.x;
+        int nonZeroY = inCurrent.y;
+
+        int outFitLeft =
+            (int)round(coeffsLR[0][0] + coeffsLR[0][1] * nonZeroY + coeffsLR[0][2] * pow(nonZeroY, 2));
+        int outFitRight =
+            (int)round(coeffsLR[1][0] + coeffsLR[1][1] * nonZeroY + coeffsLR[1][2] * pow(nonZeroY, 2));
+
+        int widthLowLeft = outFitLeft - margin;
+        int widthHighLeft = outFitLeft + margin;
+        int widthLowRight = outFitRight - margin;
+        int widthHighRight = outFitRight + margin;
+
+        // In this condition, push back on the array
+        if (nonZeroX >= widthLowLeft && nonZeroX < widthHighLeft)
+        {
+            leftLane_IDX.push_back(inCurrent);
+        }
+
+        if (nonZeroX >= widthLowRight && nonZeroX < widthHighRight)
+        {
+            rightLane_IDX.push_back(inCurrent);
+        }
+    }
+
+    vector<vector<Point>> newLanePixelContainer = {leftLane_IDX, rightLane_IDX};
+
+    return newLanePixelContainer;
 }
 
 void reCenterCurrentPos(vector<Point> pntIndexArray, int *currentXPos)
@@ -461,4 +495,20 @@ void calcCoeffsValue(double xArr[][3], double yArr[][1], double aArr[][1])
 int calcPoly(double xIn, vector<double> polyCoeffs)
 {
     return (int)round(polyCoeffs[0] + polyCoeffs[1] * xIn + polyCoeffs[2] * pow(xIn, 2));
+}
+
+void makeOneDirectionArray(
+    vector<vector<Point>> pointContainer,
+    int i_side,
+    vector<double> *inCoord,
+    vector<double> *outCoord)
+{
+    vector<Point> ptsContainer = pointContainer[i_side];
+
+    // make each x and y array from point container.
+    for (int i = 0; i < ptsContainer.size(); i++)
+    {
+        inCoord->push_back(ptsContainer[i].y);
+        outCoord->push_back(ptsContainer[i].x);
+    }
 }

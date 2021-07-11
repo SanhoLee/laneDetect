@@ -13,4 +13,7 @@
 #define A_FILTER_ 1
 #define B_FILTER_ 2
 
+#define LEFT_LANE 0
+#define RIGHT_LANE 1
+
 #endif
