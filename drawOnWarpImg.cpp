@@ -121,11 +121,14 @@ void drawPolygonAndFill(Mat imgBinary)
     }
 
     // do fillpoly function with pixel Pos variables.
-    fillPoly(dstImg, leftPolyPts, Scalar(255, 0, 0), LINE_AA);
-    fillPoly(dstImg, rightPolyPts, Scalar(0, 0, 255), LINE_AA);
+    Mat windowImg = Mat::zeros(imgBinary.size(), CV_8UC3);
+    Mat imgOut;
+    fillPoly(windowImg, leftPolyPts, Scalar(255, 0, 0), LINE_AA);
+    fillPoly(windowImg, rightPolyPts, Scalar(0, 0, 255), LINE_AA);
 
-    // (todo) addweighted funtion....
-    imshow("dstImg", dstImg);
+    // addweighted from two img.
+    addWeighted(dstImg, 1.0, windowImg, 0.3, 0, imgOut);
+    imshow("imgOut", imgOut);
     waitKey(0);
 }
 
@@ -167,9 +170,9 @@ void polyfit_using_prev_fitCoeffs(
 Mat make3ChImg(Mat imgBinary)
 {
     Mat dstImg;
-    Mat channel_B = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
-    Mat channel_G = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
-    Mat channel_R = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
+    Mat channel_B = Mat::zeros(imgBinary.size(), CV_8UC1);
+    Mat channel_G = Mat::zeros(imgBinary.size(), CV_8UC1);
+    Mat channel_R = Mat::zeros(imgBinary.size(), CV_8UC1);
 
     for (int i = 0; i < imgBinary.rows; i++)
     {
