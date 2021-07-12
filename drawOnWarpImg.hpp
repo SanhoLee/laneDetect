@@ -15,4 +15,5 @@ void polyfit_using_prev_fitCoeffs(
     vector<vector<Point>> *pixelPosXYNext,
     vector<vector<double>> *coeffsLRNext);
 
+Mat make3ChImg(Mat imgBinary);
 #endif

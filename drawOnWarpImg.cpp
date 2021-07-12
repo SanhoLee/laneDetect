@@ -12,38 +12,7 @@ void drawOnWarpImg(Mat imgBinary)
     vector<vector<Point>> pixelPosXY;
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
 
-    Mat dstImg;
-    Mat channel_B = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
-    Mat channel_G = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
-    Mat channel_R = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
-
-    // 그래서, 모든 값을 0으로 셋팅하고, imgBinary 값을 이용해서 loop를 돌린다
-    for (int i = 0; i < imgBinary.rows; i++)
-    {
-        for (int j = 0; j < imgBinary.cols; j++)
-        {
-            if (imgBinary.at<uint8_t>(i, j) == 1)
-            {
-                // set white color.
-                channel_B.at<uint8_t>(i, j) = 255;
-                channel_G.at<uint8_t>(i, j) = 255;
-                channel_R.at<uint8_t>(i, j) = 255;
-            }
-        }
-    }
-
-    /* 
-    np.dstack(vector A, vector B, vector C) 와 같은 작업을 C++로 실행
-    각 채널의 픽셀 값을 바이너리 이미지의 픽셀 값으로 채워준다.
-    바이너리에서 각 위치에서 픽셀 값은 0 또는 1(검출된 곳) 으로 분류 되어 있다.
-    
-    dstImg -> 8U3U 타입의 이미지 변수가 된다.
-    */
-    vector<Mat> channels = {channel_B, channel_G, channel_R};
-
-    // 3개의 채널을 가지고 있는 Mat벡터를 Merge해서 dstImg를 반환한다.
-    // dstImg :: CV_8UC3
-    merge(channels, dstImg);
+    Mat dstImg = make3ChImg(imgBinary);
 
     // polynomial coefficients를 이용해서, fit data를 이미지에 출력한다.
     // 2차 방정식에 사용할 x인풋을 생성
@@ -63,8 +32,8 @@ void drawOnWarpImg(Mat imgBinary)
         int yLeft = 0;
         int yRight = 0;
 
-        yLeft = (int)round(coeffsLR[0][0] + coeffsLR[0][1] * xPix[i] + coeffsLR[0][2] * pow(xPix[i], 2));
-        yRight = (int)round(coeffsLR[1][0] + coeffsLR[1][1] * xPix[i] + coeffsLR[1][2] * pow(xPix[i], 2));
+        yLeft = calcPoly(xPix[i], coeffsLR[0]);
+        yRight = calcPoly(xPix[i], coeffsLR[1]);
 
         yPixLeft.push_back(yLeft);
         yPixRight.push_back(yRight);
@@ -120,11 +89,44 @@ void drawPolygonAndFill(Mat imgBinary)
     vector<vector<double>> coeffsLR, coeffsLRNext;
     vector<vector<Rect>> rectWindowInfo;
     vector<vector<Point>> pixelPosXY, pixelPosXYNext;
+    Mat dstImg = make3ChImg(imgBinary);
 
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
     polyfit_using_prev_fitCoeffs(imgBinary, coeffsLR, &pixelPosXYNext, &coeffsLRNext);
 
-    //(todo) do fillpoly function with pixel Pos variables.
+    // with new coeffs, calculate each lane center position.
+    vector<Point> leftLanePts;
+    vector<Point> rightLanePts;
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        leftLanePts.push_back(Point(calcPoly(i, coeffsLRNext[LEFT_LANE]), i));
+        rightLanePts.push_back(Point(calcPoly(i, coeffsLRNext[RIGHT_LANE]), i));
+    }
+
+    vector<Point> leftPolyPts;
+    vector<Point> rightPolyPts;
+    int margin = 80;
+
+    for (int i = imgBinary.rows; i >= 0; i--)
+    {
+        leftPolyPts.push_back(Point(leftLanePts[i].x - margin, i));
+        rightPolyPts.push_back(Point(rightLanePts[i].x - margin, i));
+    }
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        leftPolyPts.push_back(Point(leftLanePts[i].x + margin, i));
+        rightPolyPts.push_back(Point(rightLanePts[i].x + margin, i));
+    }
+
+    // do fillpoly function with pixel Pos variables.
+    fillPoly(dstImg, leftPolyPts, Scalar(255, 0, 0), LINE_AA);
+    fillPoly(dstImg, rightPolyPts, Scalar(0, 0, 255), LINE_AA);
+
+    // (todo) addweighted funtion....
+    imshow("dstImg", dstImg);
+    waitKey(0);
 }
 
 void polyfit_using_prev_fitCoeffs(
@@ -160,4 +162,34 @@ void polyfit_using_prev_fitCoeffs(
     // push back on coeffs vector.
     coeffsLRNext->push_back(polyCoeffsLeft_new);
     coeffsLRNext->push_back(polyCoeffsRight_new);
+}
+
+Mat make3ChImg(Mat imgBinary)
+{
+    Mat dstImg;
+    Mat channel_B = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
+    Mat channel_G = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
+    Mat channel_R = Mat::zeros(imgBinary.rows, imgBinary.cols, CV_8UC1);
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        for (int j = 0; j < imgBinary.cols; j++)
+        {
+            if (imgBinary.at<uint8_t>(i, j) == 1)
+            {
+                // set white color.
+                channel_B.at<uint8_t>(i, j) = 255;
+                channel_G.at<uint8_t>(i, j) = 255;
+                channel_R.at<uint8_t>(i, j) = 255;
+            }
+        }
+    }
+
+    /* dstImg -> 8U3U 타입의 이미지 변수가 된다. */
+    vector<Mat> channels = {channel_B, channel_G, channel_R};
+
+    // 3개의 채널을 가지고 있는 Mat벡터를 Merge해서 dstImg를 반환한다.
+    // dstImg :: CV_8UC3
+    merge(channels, dstImg);
+    return dstImg;
 }
