@@ -16,7 +16,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imgUndistort = undistortingImg(img, true);
 
     /* perspective transform(3d -> 2d(bird's view)) */
-    imgUnwarp = unWarpingImg(imgUndistort, &invMatx, false);
+    imgUnwarp = unWarpingImg(imgUndistort, &invMatx, true);
 
     /* normalize img pixel for each color channel */
     imgHLS_L = normalize_HLS_L(imgUnwarp);
@@ -370,8 +370,9 @@ Mat unWarpingImg(Mat imgUndistort, Mat **invMatx, bool showWarpZone)
     int width, height;
     vector<Point2f> srcRectCoord;
     vector<Point2f> dstRectCoord;
-    int upX_diff = 180;
-    int upY_diff = 220;
+
+    int upX_diff = 100;
+    int upY_diff = 260;
     int downX_diff = 230;
     int downY_diff = 80;
 

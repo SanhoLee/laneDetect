@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "common.hpp"
+#include "preprocImg.hpp"
 #include "calcLaneImg.hpp"
 #include "drawOnWarpImg.hpp"
 
@@ -104,32 +105,32 @@ void drawPolygonAndFill(Mat imgBinary)
         rightLanePts.push_back(Point(calcPoly(i, coeffsLRNext[RIGHT_LANE]), i));
     }
 
-    vector<Point> leftPolyPts;
+    vector<Point> lanePolyPts;
     vector<Point> rightPolyPts;
     int margin = 80;
 
     for (int i = imgBinary.rows; i >= 0; i--)
     {
-        leftPolyPts.push_back(Point(leftLanePts[i].x - margin, i));
+        lanePolyPts.push_back(Point(leftLanePts[i].x - margin, i));
         rightPolyPts.push_back(Point(rightLanePts[i].x - margin, i));
     }
 
     for (int i = 0; i < imgBinary.rows; i++)
     {
-        leftPolyPts.push_back(Point(leftLanePts[i].x + margin, i));
+        lanePolyPts.push_back(Point(leftLanePts[i].x + margin, i));
         rightPolyPts.push_back(Point(rightLanePts[i].x + margin, i));
     }
 
     // do fillpoly function with pixel Pos variables.
     Mat windowImg = Mat::zeros(imgBinary.size(), CV_8UC3);
     Mat imgOut;
-    fillPoly(windowImg, leftPolyPts, Scalar(255, 0, 0), LINE_AA);
+    fillPoly(windowImg, lanePolyPts, Scalar(255, 0, 0), LINE_AA);
     fillPoly(windowImg, rightPolyPts, Scalar(0, 0, 255), LINE_AA);
 
     // addweighted from two img.
     addWeighted(dstImg, 1.0, windowImg, 0.3, 0, imgOut);
-    imshow("imgOut", imgOut);
-    waitKey(0);
+    // imshow("imgOut", imgOut);
+    // waitKey(0);
 }
 
 void polyfit_using_prev_fitCoeffs(
@@ -195,4 +196,54 @@ Mat make3ChImg(Mat imgBinary)
     // dstImg :: CV_8UC3
     merge(channels, dstImg);
     return dstImg;
+}
+
+Mat drawLane(Mat original)
+{
+    vector<vector<double>> coeffsLR;
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<Point>> pixelPosXY;
+    Mat mInv;
+
+    Mat imgBinary = preprocImg(original, &mInv);
+    calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
+
+    // with poly-nomial coeffs, calculate each lane pixel position.(fit value.)
+    vector<Point> leftLanePts;
+    vector<Point> rightLanePts;
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        leftLanePts.push_back(Point(calcPoly(i, coeffsLR[LEFT_LANE]), i));
+        rightLanePts.push_back(Point(calcPoly(i, coeffsLR[RIGHT_LANE]), i));
+    }
+
+    vector<Point> lanePolyPts;
+    int margin = 10;
+
+    for (int i = imgBinary.rows; i >= 0; i--)
+    {
+        lanePolyPts.push_back(Point(leftLanePts[i].x - margin, i));
+    }
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        lanePolyPts.push_back(Point(rightLanePts[i].x + margin, i));
+    }
+
+    // Drawing Detected Lane information on Zero img.
+    Mat windowImg = Mat::zeros(imgBinary.size(), CV_8UC3);
+    fillPoly(windowImg, lanePolyPts, Scalar(0, 255, 0), LINE_AA);
+    polylines(windowImg, leftLanePts, false, Scalar(255, 0, 255), 15, LINE_AA);
+    polylines(windowImg, rightLanePts, false, Scalar(0, 255, 255), 15, LINE_AA);
+
+    // unWarping Img
+    Mat unWarpedImg;
+    warpPerspective(windowImg, unWarpedImg, mInv, Size(original.cols, original.rows), INTER_LINEAR);
+
+    // Combination with addweighted fuctino for two img.
+    Mat imgOut;
+    addWeighted(original, 1.0, unWarpedImg, 0.5, 0, imgOut);
+
+    return imgOut;
 }

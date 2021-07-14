@@ -15,19 +15,21 @@ int main(int argc, char **argv)
     Combined img :: best img after preprocessing from unwarping to color channel combinineg.
      */
 
-    // img = imread("data/straight_lines1.jpg");
-    img = imread("data/straight_lines2.jpg");
+    img = imread("data/straight_lines1.jpg");
+    // img = imread("data/straight_lines2.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;
         return -1;
     }
 
-    imgCombined = preprocImg(img, &invMatx);
+    // imgCombined = preprocImg(img, &invMatx);
     // drawOnWarpImg(imgCombined);
-    drawPolygonAndFill(imgCombined);
+    // drawPolygonAndFill(imgCombined);
 
-    // on later, draw lane on original img...
+    Mat outImg = drawLane(img);
+    imshow("outImg", outImg);
+    waitKey(0);
 
     return 0;
 }

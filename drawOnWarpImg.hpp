@@ -16,4 +16,6 @@ void polyfit_using_prev_fitCoeffs(
     vector<vector<double>> *coeffsLRNext);
 
 Mat make3ChImg(Mat imgBinary);
+Mat drawLane(Mat original);
+
 #endif
