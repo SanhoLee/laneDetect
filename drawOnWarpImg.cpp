@@ -209,7 +209,12 @@ Mat drawLane(Mat original)
 
     Mat imgBinary = preprocImg(original, &mInv);
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
-    calcLaneRadiusAndCenter(imgBinary.rows, pixelPosXY, &leftRadius, &rightRadius, &centerOffset);
+    calcLaneRadiusAndCenter(imgBinary, pixelPosXY, &leftRadius, &rightRadius, &centerOffset);
+    /* 
+        centerOffset > 0 (+)  : car is on right side of lane.
+        centerOffset = 0      : car is on center of lane.
+        centerOffset < 0 (-)  : car is on left side of lane.
+    */
 
     // with poly-nomial coeffs, calculate each lane pixel position.(fit value.)
     vector<Point> leftLanePts;
@@ -251,7 +256,7 @@ Mat drawLane(Mat original)
     return imgOut;
 }
 
-void calcLaneRadiusAndCenter(int imgRows,
+void calcLaneRadiusAndCenter(Mat img,
                              vector<vector<Point>> pixelPosXY,
                              double *leftRadius,
                              double *rightRadius,
@@ -295,6 +300,7 @@ void calcLaneRadiusAndCenter(int imgRows,
     coeffRight = polyFit_cpp(inCoordRight, outCoordRight, 2);
 
     // define calculating position for y direction.(bottom of img)
+    int imgRows = img.rows;
     double yEval = (imgRows - 1) * ymPerPix;
 
     // calculating curvature radius
@@ -308,4 +314,16 @@ void calcLaneRadiusAndCenter(int imgRows,
     up = pow(1 + pow((2 * coeffRight[2] * yEval + coeffRight[1]), 2), 1.5);
     down = fabs(2 * coeffRight[2]);
     *rightRadius = up / down;
+
+    // calculating Center offset with car center position(img center = car center).
+    double h = img.cols * xmPerPix;
+    double carCenPos = (img.cols / 2) * xmPerPix;
+    double leftInit = coeffLeft[0] + coeffLeft[1] * h + coeffLeft[2] * pow(h, 2);
+    double rightInit = coeffRight[0] + coeffRight[1] * h + coeffRight[2] * pow(h, 2);
+    double laneCenter = (leftInit + rightInit) / 2;
+
+    *centerOffset = carCenPos - laneCenter;
+    // centerOffset > 0 (+)  : car is on right side of lane.
+    // centerOffset = 0      : car is on center of lane.
+    // centerOffset < 0 (-)  : car is on left side of lane.
 }

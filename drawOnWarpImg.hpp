@@ -18,7 +18,7 @@ void polyfit_using_prev_fitCoeffs(
 Mat make3ChImg(Mat imgBinary);
 Mat drawLane(Mat original);
 void calcLaneRadiusAndCenter(
-    int imgRows,
+    Mat img,
     vector<vector<Point>> pixelPosXY,
     double *leftRadius,
     double *rightRadius,
