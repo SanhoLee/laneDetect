@@ -24,6 +24,7 @@ int getRightX_base(vector<int> sumArray);
 int mean_vectorArray(vector<Point> target_vector);
 
 void reCenterCurrentPos(vector<Point> pntIndexArray, int *currentXPos);
+
 void winSearchImg(Mat preprocess,
                   int numWindow,
                   vector<int> xBase,

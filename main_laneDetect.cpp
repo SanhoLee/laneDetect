@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     // drawPolygonAndFill(imgCombined);
 
     Mat outImg = drawLane(img);
+
     imshow("outImg", outImg);
     waitKey(0);
 
