@@ -210,6 +210,7 @@ Mat drawLane(Mat original)
     Mat imgBinary = preprocImg(original, &mInv);
     calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
     calcLaneRadiusAndCenter(imgBinary, pixelPosXY, &leftRadius, &rightRadius, &centerOffset);
+    double radiusVal = (leftRadius + rightRadius) / 2;
     /* 
         centerOffset > 0 (+)  : car is on right side of lane.
         centerOffset = 0      : car is on center of lane.
@@ -217,7 +218,8 @@ Mat drawLane(Mat original)
     */
 
     // with poly-nomial coeffs, calculate each lane pixel position.(fit value.)
-    vector<Point> leftLanePts;
+    vector<Point>
+        leftLanePts;
     vector<Point> rightLanePts;
 
     for (int i = 0; i < imgBinary.rows; i++)
@@ -226,6 +228,7 @@ Mat drawLane(Mat original)
         rightLanePts.push_back(Point(calcPoly(i, coeffsLR[RIGHT_LANE]), i));
     }
 
+    // for drawing lane area, get each lane pixel data.
     vector<Point> lanePolyPts;
     int margin = 10;
 
@@ -248,6 +251,30 @@ Mat drawLane(Mat original)
     // unWarping Img
     Mat unWarpedImg;
     warpPerspective(windowImg, unWarpedImg, mInv, Size(original.cols, original.rows), INTER_LINEAR);
+
+    // put Text on calculated Lane data : radius, offset distance.
+
+    string radius = format("%.2f", radiusVal);
+    string radiusText = "Curvature Radius : " + radius + "m";
+
+    string carPosition;
+    if (centerOffset > 0)
+    {
+        carPosition = "Right";
+    }
+    else if (centerOffset < 0)
+    {
+        carPosition = "Left";
+    }
+    else
+    {
+        carPosition = "Same";
+    }
+
+    string carPosText = "VEHICLE OFFSET : " + format("%.2f", fabs(centerOffset)) + "m " + carPosition + " of Lane Center";
+
+    putText(original, radiusText, Point(30, 60), FONT_HERSHEY_PLAIN, 2.0, Scalar(255, 255, 0), 2, LINE_AA, false);
+    putText(original, carPosText, Point(30, 100), FONT_HERSHEY_PLAIN, 2.0, Scalar(255, 255, 0), 2, LINE_AA, false);
 
     // Combination with addweighted fuctino for two img.
     Mat imgOut;
