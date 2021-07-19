@@ -1,5 +1,7 @@
 #include <iostream>
+#include "common.hpp"
 #include "CV_header.hpp"
+#include "struct_drawData.h"
 #include "preprocImg.hpp"
 #include "calcLaneImg.hpp"
 #include "drawOnWarpImg.hpp"
@@ -7,30 +9,29 @@
 int main(int argc, char **argv)
 {
 
-    Mat img, imgCombined;
+    Mat img, imgBinary, imgShow;
     Mat invMatx;
 
-    /* 
-    pipeline     :: preprocessing img.
-    Combined img :: best img after preprocessing from unwarping to color channel combinineg.
-     */
+    drawDataInfo drawDataSet;
 
-    img = imread("data/straight_lines1.jpg");
-    // img = imread("data/straight_lines2.jpg");
+    // img = imread("data/straight_lines1.jpg");
+    img = imread("data/straight_lines2.jpg");
     if (img.empty())
     {
         cout << " ERROR :: IMG READ FAILED." << endl;
         return -1;
     }
 
-    // imgCombined = preprocImg(img, &invMatx);
-    // drawOnWarpImg(imgCombined);
-    // drawPolygonAndFill(imgCombined);
+    imgBinary = preprocImg(img, &invMatx);
+    drawDataSet = calcImg(imgBinary);
+    imgShow = drawAll(img, imgBinary, invMatx, drawDataSet);
 
-    Mat outImg = drawLane(img);
-
-    imshow("outImg", outImg);
+    imshow("IMG SHOW", imgShow);
     waitKey(0);
+
+    // Mat outImg = drawLane(img);
+    // drawOnWarpImg(imgBinary);
+    // drawPolygonAndFill(imgBinary);
 
     return 0;
 }

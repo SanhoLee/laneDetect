@@ -16,7 +16,7 @@ Mat preprocImg(Mat img, Mat *invMatx)
     imgUndistort = undistortingImg(img, true);
 
     /* perspective transform(3d -> 2d(bird's view)) */
-    imgUnwarp = unWarpingImg(imgUndistort, &invMatx, true);
+    imgUnwarp = unWarpingImg(imgUndistort, &invMatx, false);
 
     /* normalize img pixel for each color channel */
     imgHLS_L = normalize_HLS_L(imgUnwarp);

@@ -2,10 +2,48 @@
 #include <numeric>
 #include "calcLaneImg.hpp"
 #include "common.hpp"
+#include "struct_drawData.h"
 
 // minimum pixel for left and right window search.
 int minNumPix = 40;
 int numWindow = 10;
+
+drawDataInfo calcImg(Mat imgBinary)
+{
+    /* return this.
+    
+     vector<Point> leftLanePts;
+     vector<Point> rightLanePts;
+     double leftRadius;
+     double rightRadius;
+     double centerOffset;
+    */
+    vector<vector<double>> coeffsLR;
+    vector<vector<Rect>> rectWindowInfo;
+    vector<vector<Point>> pixelPosXY;
+
+    // initializing struct variable
+    drawDataInfo drawDataStruct;
+    drawDataStruct.leftRadius = 0.0;
+    drawDataStruct.rightRadius = 0.0;
+    drawDataStruct.centerOffset = 0.0;
+
+    calcLaneImg(imgBinary, &rectWindowInfo, &pixelPosXY, &coeffsLR);
+    calcLaneRadiusAndCenter(
+        imgBinary,
+        pixelPosXY,
+        &drawDataStruct.leftRadius,
+        &drawDataStruct.rightRadius,
+        &drawDataStruct.centerOffset);
+
+    for (int i = 0; i < imgBinary.rows; i++)
+    {
+        drawDataStruct.leftLanePts.push_back(Point(calcPoly(i, coeffsLR[LEFT_LANE]), i));
+        drawDataStruct.rightLanePts.push_back(Point(calcPoly(i, coeffsLR[RIGHT_LANE]), i));
+    }
+
+    return drawDataStruct;
+}
 
 // vector<vector<double>> calcLaneImg(Mat imgCombined, vector<vector<Rect>> rectWindowInfo, vector<vector<Point>> pixelPosXY, vector<vector<double>> coeffsLR)
 void calcLaneImg(
@@ -511,4 +549,76 @@ void makeOneDirectionArray(
         inCoord->push_back(ptsContainer[i].y);
         outCoord->push_back(ptsContainer[i].x);
     }
+}
+
+void calcLaneRadiusAndCenter(Mat img,
+                             vector<vector<Point>> pixelPosXY,
+                             double *leftRadius,
+                             double *rightRadius,
+                             double *centerOffset)
+{
+    // objective for centerOffset : 차 중심과 도로의 중심이 얼마나 오프셋 되어있는지 확인하기 위해 계산함
+    // r값 구하는 식 참고 : https://github.com/SanhoLee/advanced-lane-finding/blob/main/resources/radius-of-curvature.png
+
+    /* 아래내용은, 실제 관측해야 하는 부분이 포함되어 있는 것 같다. 척도?
+     meters per pixel, lane line  : 10ft = 3.048 meters (img height in realworld?)
+     meters per pixel, lane width : 12ft = 3.7 meters (lane width in realworld?)
+    */
+
+    // unit conversion from pixel to meter.
+    double ymPerPix = 3.048 / 100; // cm?
+    double xmPerPix = 3.7 / 378;   // ? 378의 의미는  모르겠음.
+
+    vector<double> inCoordLeft;
+    vector<double> outCoordLeft;
+    vector<double> coeffLeft;
+
+    vector<double> inCoordRight;
+    vector<double> outCoordRight;
+    vector<double> coeffRight;
+
+    // multiply unit conversion factor.
+    for (int i = 0; i < pixelPosXY[LEFT_LANE].size(); i++)
+    {
+        inCoordLeft.push_back(pixelPosXY[LEFT_LANE][i].y * ymPerPix);
+        outCoordLeft.push_back(pixelPosXY[LEFT_LANE][i].x * xmPerPix);
+    }
+
+    for (int i = 0; i < pixelPosXY[RIGHT_LANE].size(); i++)
+    {
+        inCoordRight.push_back(pixelPosXY[RIGHT_LANE][i].y * ymPerPix);
+        outCoordRight.push_back(pixelPosXY[RIGHT_LANE][i].x * xmPerPix);
+    }
+
+    // get polyfit coeffs with unit converted data.
+    coeffLeft = polyFit_cpp(inCoordLeft, outCoordLeft, 2);
+    coeffRight = polyFit_cpp(inCoordRight, outCoordRight, 2);
+
+    // define calculating position for y direction.(bottom of img)
+    int imgRows = img.rows;
+    double yEval = (imgRows - 1) * ymPerPix;
+
+    // calculating curvature radius
+    double up = 0;
+    double down = 0;
+
+    up = pow(1 + pow((2 * coeffLeft[2] * yEval + coeffLeft[1]), 2), 1.5);
+    down = fabs(2 * coeffLeft[2]);
+    *leftRadius = up / down;
+
+    up = pow(1 + pow((2 * coeffRight[2] * yEval + coeffRight[1]), 2), 1.5);
+    down = fabs(2 * coeffRight[2]);
+    *rightRadius = up / down;
+
+    // calculating Center offset with car center position(img center = car center).
+    double h = img.cols * xmPerPix;
+    double carCenPos = (img.cols / 2) * xmPerPix;
+    double leftInit = coeffLeft[0] + coeffLeft[1] * h + coeffLeft[2] * pow(h, 2);
+    double rightInit = coeffRight[0] + coeffRight[1] * h + coeffRight[2] * pow(h, 2);
+    double laneCenter = (leftInit + rightInit) / 2;
+
+    *centerOffset = carCenPos - laneCenter;
+    // centerOffset > 0 (+)  : car is on right side of lane.
+    // centerOffset = 0      : car is on center of lane.
+    // centerOffset < 0 (-)  : car is on left side of lane.
 }

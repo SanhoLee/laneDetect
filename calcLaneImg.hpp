@@ -2,9 +2,13 @@
 #define __CALCLANEIMG__HEADER__
 
 #include "CV_header.hpp"
+#include "common.hpp"
+#include "struct_drawData.h"
 
 using namespace std;
 using namespace cv;
+
+drawDataInfo calcImg(Mat imgBinary);
 
 Mat halfDownImg(Mat original);
 
@@ -51,5 +55,12 @@ void makeOneDirectionArray(
     int i_side,
     vector<double> *inCoord,
     vector<double> *outCoord);
+
+void calcLaneRadiusAndCenter(
+    Mat img,
+    vector<vector<Point>> pixelPosXY,
+    double *leftRadius,
+    double *rightRadius,
+    double *centerOffset);
 
 #endif

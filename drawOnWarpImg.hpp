@@ -6,6 +6,7 @@
 using namespace std;
 using namespace cv;
 
+Mat drawAll(Mat original, Mat binary, Mat invMatx, drawDataInfo drawDataSet);
 void drawOnWarpImg(Mat imgBinary);
 void drawRectangle(Mat dstImg, vector<vector<Rect>> rectWindowInfo);
 void drawPolygonAndFill(Mat imgBinary);
@@ -17,11 +18,5 @@ void polyfit_using_prev_fitCoeffs(
 
 Mat make3ChImg(Mat imgBinary);
 Mat drawLane(Mat original);
-void calcLaneRadiusAndCenter(
-    Mat img,
-    vector<vector<Point>> pixelPosXY,
-    double *leftRadius,
-    double *rightRadius,
-    double *centerOffset);
 
 #endif
